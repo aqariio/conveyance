@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=east,half=lower": {
+      "model": "conveyance:block/spruce_cabin_door_bottom"
+    },
+    "facing=east,half=upper": {
+      "model": "conveyance:block/spruce_cabin_door_top"
+    },
+    "facing=north,half=lower": {
+      "model": "conveyance:block/spruce_cabin_door_bottom",
+      "y": 270
+    },
+    "facing=north,half=upper": {
+      "model": "conveyance:block/spruce_cabin_door_top",
+      "y": 270
+    },
+    "facing=south,half=lower": {
+      "model": "conveyance:block/spruce_cabin_door_bottom",
+      "y": 90
+    },
+    "facing=south,half=upper": {
+      "model": "conveyance:block/spruce_cabin_door_top",
+      "y": 90
+    },
+    "facing=west,half=lower": {
+      "model": "conveyance:block/spruce_cabin_door_bottom",
+      "y": 180
+    },
+    "facing=west,half=upper": {
+      "model": "conveyance:block/spruce_cabin_door_top",
+      "y": 180
+    }
+  }
+}

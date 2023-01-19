@@ -1,0 +1,40 @@
+{
+	"schema_version": 1,
+	"quilt_loader": {
+		"group": "aqario.conveyance",
+		"id": "conveyance",
+		"version": "${version}",
+		"metadata": {
+			"name": "Conveyance",
+			"description": "Transportation at its finest",
+			"contributors": {
+				"aqario": "Owner"
+			},
+			"contact": {
+				"issues": "https://github.com/aqariio/conveyance/issues",
+				"sources": "https://github.com/aqariio/conveyance"
+			},
+			"icon": "assets/conveyance/icon.png"
+		},
+		"intermediate_mappings": "net.fabricmc:intermediary",
+		"entrypoints": {
+			"init": "aqario.conveyance.common.Conveyance",
+			"client_init": "aqario.conveyance.client.ConveyanceClient"
+		},
+		"depends": [
+			{
+				"id": "quilt_loader",
+				"versions": ">=0.17.0-"
+			},
+			{
+				"id": "quilted_fabric_api",
+				"versions": ">=4.0.0-"
+			},
+			{
+				"id": "minecraft",
+				"versions": ">=1.19.2"
+			}
+		]
+	},
+	"mixin": "conveyance.mixins.json"
+}

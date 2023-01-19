@@ -1,0 +1,9 @@
+{
+  "item.conveyance.glider": "Glider",
+  "block.conveyance.spruce_cabin_door": "Spruce Cabin Door",
+  "block.conveyance.spruce_hull": "Spruce Hull",
+  "block.conveyance.dark_oak_hull": "Dark Oak Hull",
+  "block.conveyance.oak_beam": "Oak Beam",
+  "entity.conveyance.galleon": "Galleon",
+  "entity.conveyance.galleon.fail": "The cabin cannot be entered"
+}

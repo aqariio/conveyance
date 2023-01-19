@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "conveyance:block/dark_oak_hull",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y": {
+      "model": "conveyance:block/dark_oak_hull"
+    },
+    "axis=z": {
+      "model": "conveyance:block/dark_oak_hull",
+      "x": 90
+    }
+  }
+}
