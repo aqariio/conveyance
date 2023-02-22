@@ -5,5 +5,6 @@
   "block.conveyance.dark_oak_hull": "Dark Oak Hull",
   "block.conveyance.oak_beam": "Oak Beam",
   "entity.conveyance.galleon": "Galleon",
+  "entity.conveyance.monoplane": "Monoplane",
   "entity.conveyance.galleon.fail": "The cabin cannot be entered"
 }

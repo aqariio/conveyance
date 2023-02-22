@@ -1,5 +1,7 @@
 package aqario.conveyance.common.entity.vehicle;
 
+import aqario.conveyance.common.entity.ConveyanceEntityType;
+import aqario.conveyance.common.entity.part.GalleonPart;
 import aqario.conveyance.common.world.dimension.ConveyanceWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -17,38 +19,59 @@ import net.minecraft.world.TeleportTarget;
 import net.minecraft.world.World;
 import org.quiltmc.qsl.worldgen.dimension.api.QuiltDimensions;
 
-public class GalleonEntity extends Entity {
-    public GalleonEntity(EntityType<?> type, World world) {
-        super(type, world);
+public class GalleonEntity extends VehicleEntity {
+	private final GalleonPart[] parts;
+	public final GalleonPart head;
+	private final GalleonPart neck;
+	private final GalleonPart body;
+	private final GalleonPart tail1;
+	private final GalleonPart tail2;
+	private final GalleonPart tail3;
+	private final GalleonPart rightWing;
+	private final GalleonPart leftWing;
+
+    public GalleonEntity(EntityType<? extends GalleonEntity> entityType, World world) {
+		super(ConveyanceEntityType.GALLEON, world);
+		this.head = new GalleonPart(this, "head", 1.0F, 1.0F);
+		this.neck = new GalleonPart(this, "neck", 3.0F, 3.0F);
+		this.body = new GalleonPart(this, "body", 5.0F, 3.0F);
+		this.tail1 = new GalleonPart(this, "tail", 2.0F, 2.0F);
+		this.tail2 = new GalleonPart(this, "tail", 2.0F, 2.0F);
+		this.tail3 = new GalleonPart(this, "tail", 2.0F, 2.0F);
+		this.rightWing = new GalleonPart(this, "wing", 4.0F, 2.0F);
+		this.leftWing = new GalleonPart(this, "wing", 4.0F, 2.0F);
+		this.parts = new GalleonPart[]{this.head, this.neck, this.body, this.tail1, this.tail2, this.tail3, this.rightWing, this.leftWing};
+//		this.setHealth(this.getMaxHealth());
+		this.noClip = true;
     }
 
     @Override
     protected void initDataTracker() {
     }
 
-    @Override
-    public boolean collidesWith(Entity other) {
-        return GalleonEntity.canCollide(this, other);
-    }
+	@Override
+	public boolean collidesWith(Entity other) {
+		return GalleonEntity.canCollide(this, other);
+	}
 
-    public static boolean canCollide(Entity entity, Entity other) {
-        return (other.isCollidable() || other.isPushable()) && !entity.isConnectedThroughVehicle(other);
-    }
+	public static boolean canCollide(Entity entity, Entity other) {
+		return (other.isCollidable() || other.isPushable()) && !entity.isConnectedThroughVehicle(other);
+	}
 
-    @Override
-    public boolean isCollidable() {
-        return true;
-    }
+	@Override
+	public boolean isCollidable() {
+		return true;
+	}
 
-    @Override
-    public boolean isPushable() {
-        return true;
-    }
+	@Override
+	public boolean isPushable() {
+		return true;
+	}
 
-    @Override
-    public boolean collides() {
-        return !this.isRemoved();
-    }
+	@Override
+	public boolean collides() {
+		return !this.isRemoved();
+	}
 
     @Override
     protected void readCustomDataFromNbt(NbtCompound nbt) {
@@ -63,7 +86,7 @@ public class GalleonEntity extends Entity {
         if (player.shouldCancelInteraction()) {
             return ActionResult.PASS;
         }
-        sendPlayerToShip(player);
+        sendPlayerToCabin(player);
 
 //        if (this.ticksUnderwater < 60.0f) {
 //            if (!this.world.isClient) {
@@ -74,7 +97,7 @@ public class GalleonEntity extends Entity {
         return ActionResult.PASS;
     }
 
-    private void sendPlayerToShip(PlayerEntity player) {
+    private void sendPlayerToCabin(PlayerEntity player) {
         if (!world.isClient && !(world.getRegistryKey() == ConveyanceWorld.GALLEON)) {
             RegistryKey<World> registryKey = ConveyanceWorld.GALLEON;
             ServerWorld serverWorld = ((ServerWorld)world).getServer().getWorld(registryKey);

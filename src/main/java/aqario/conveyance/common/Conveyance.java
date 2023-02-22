@@ -1,7 +1,7 @@
 package aqario.conveyance.common;
 
 import aqario.conveyance.common.block.ConveyanceBlocks;
-import aqario.conveyance.common.entity.ConveyanceEntities;
+import aqario.conveyance.common.entity.ConveyanceEntityType;
 import aqario.conveyance.common.item.ConveyanceItems;
 import aqario.conveyance.common.world.dimension.ConveyanceWorld;
 import org.quiltmc.loader.api.ModContainer;
@@ -18,10 +18,10 @@ public class Conveyance implements ModInitializer {
 
 	@Override
 	public void onInitialize(ModContainer mod) {
-		ConveyanceEntities.init();
+		LOGGER.info("Loading {}", mod.metadata().name());
+		ConveyanceEntityType.init();
 		ConveyanceBlocks.init();
 		ConveyanceItems.init();
 		ConveyanceWorld.init();
-		LOGGER.info("Loading {}!", mod.metadata().name());
 	}
 }
