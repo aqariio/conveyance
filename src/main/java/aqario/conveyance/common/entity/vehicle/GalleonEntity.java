@@ -2,7 +2,7 @@ package aqario.conveyance.common.entity.vehicle;
 
 import aqario.conveyance.common.entity.ConveyanceEntityType;
 import aqario.conveyance.common.entity.part.GalleonPart;
-import aqario.conveyance.common.world.dimension.ConveyanceWorld;
+import aqario.conveyance.common.world.dimension.ConveyanceDimensions;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
@@ -73,15 +73,7 @@ public class GalleonEntity extends VehicleEntity {
 		return !this.isRemoved();
 	}
 
-    @Override
-    protected void readCustomDataFromNbt(NbtCompound nbt) {
-    }
-
-    @Override
-    protected void writeCustomDataToNbt(NbtCompound nbt) {
-    }
-
-    @Override
+	@Override
     public ActionResult interact(PlayerEntity player, Hand hand) {
         if (player.shouldCancelInteraction()) {
             return ActionResult.PASS;
@@ -98,8 +90,8 @@ public class GalleonEntity extends VehicleEntity {
     }
 
     private void sendPlayerToCabin(PlayerEntity player) {
-        if (!world.isClient && !(world.getRegistryKey() == ConveyanceWorld.GALLEON)) {
-            RegistryKey<World> registryKey = ConveyanceWorld.GALLEON;
+        if (!world.isClient && !(world.getRegistryKey() == ConveyanceDimensions.GALLEON)) {
+            RegistryKey<World> registryKey = ConveyanceDimensions.GALLEON;
             ServerWorld serverWorld = ((ServerWorld)world).getServer().getWorld(registryKey);
             QuiltDimensions.teleport(player, serverWorld, new TeleportTarget(new Vec3d(0.5, 1, 0.5), player.getVelocity(), 0, 0));
         } else {

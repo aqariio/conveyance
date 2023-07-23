@@ -2,13 +2,17 @@ package aqario.conveyance.common.entity.vehicle;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
+import net.minecraft.util.Arm;
 import net.minecraft.world.World;
 
 public class VehicleEntity extends Entity {
-	public VehicleEntity(EntityType<?> type, World world) {
+	public VehicleEntity(EntityType<? extends VehicleEntity> type, World world) {
 		super(type, world);
 	}
 
@@ -17,11 +21,16 @@ public class VehicleEntity extends Entity {
 	}
 
 	@Override
-	protected void readCustomDataFromNbt(NbtCompound nbt) {
+	public void readCustomDataFromNbt(NbtCompound nbt) {
 	}
 
 	@Override
-	protected void writeCustomDataToNbt(NbtCompound nbt) {
+	public Iterable<ItemStack> getArmorItems() {
+		return null;
+	}
+
+	@Override
+	public void writeCustomDataToNbt(NbtCompound nbt) {
 	}
 
 	@Override

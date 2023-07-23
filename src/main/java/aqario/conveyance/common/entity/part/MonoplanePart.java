@@ -39,7 +39,6 @@ public class MonoplanePart extends Entity implements MonoplaneEntityPart {
 			if (!(player.getAbilities()).creativeMode) {
 				player.setStackInHand(hand, ConveyanceItems.MONOPLANE.getDefaultStack());
 			}
-			this.remove(RemovalReason.DISCARDED);
 			this.owner.remove(RemovalReason.DISCARDED);
 			return ActionResult.SUCCESS;
 		}
@@ -68,6 +67,14 @@ public class MonoplanePart extends Entity implements MonoplaneEntityPart {
 	}
 
 	@Override
+	protected void readCustomDataFromNbt(NbtCompound nbt) {
+	}
+
+	@Override
+	protected void writeCustomDataToNbt(NbtCompound nbt) {
+	}
+
+	@Override
 	public boolean collidesWith(Entity other) {
 		return MonoplanePart.canCollide(this, other);
 	}
@@ -92,16 +99,8 @@ public class MonoplanePart extends Entity implements MonoplaneEntityPart {
 	}
 
 	@Override
-	protected void readCustomDataFromNbt(NbtCompound nbt) {
-	}
-
-	@Override
-	protected void writeCustomDataToNbt(NbtCompound nbt) {
-	}
-
-	@Override
 	public boolean damage(DamageSource source, float amount) {
-		return false;
+		return this.owner.damage(source, amount);
 	}
 
 	@Override

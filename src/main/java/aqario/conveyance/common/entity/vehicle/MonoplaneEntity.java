@@ -5,8 +5,10 @@ import aqario.conveyance.common.entity.part.MonoplanePart;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.MovementType;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
+import net.minecraft.tag.EntityTypeTags;
 import net.minecraft.tag.FluidTags;
 import net.minecraft.util.function.BooleanBiFunction;
 import net.minecraft.util.math.BlockPos;
@@ -46,14 +48,20 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 	private float ticksUnderwater;
 	private double waterLevel;
 	private float landFriction;
+	private double x;
+	private double y;
+	private double z;
+	private double boatYaw;
+	private double boatPitch;
+	private int lerpSteps;
 	private MonoplaneEntity.Location location;
 	private MonoplaneEntity.Location lastLocation;
 
 	public MonoplaneEntity(EntityType<? extends MonoplaneEntity> type, World world) {
 		super(type, world);
-		this.nose = new MonoplanePart(this, "nose", 3.0F, 3.0F);
+		this.nose = new MonoplanePart(this, "nose", 3.5F, 3.5F);
 		this.cockpit = new MonoplanePart(this, "cockpit", 3.5F, 3.5F);
-		this.tail = new MonoplanePart(this, "tail", 3.5F, 3.5F);
+		this.tail = new MonoplanePart(this, "tail", 3.0F, 3.0F);
 		this.rightWing = new MonoplanePart(this, "wing", 4.0F, 0.5F);
 		this.leftWing = new MonoplanePart(this, "wing", 4.0F, 0.5F);
 		this.parts = new MonoplanePart[]{this.nose, this.cockpit, this.tail, this.rightWing, this.leftWing};
@@ -90,7 +98,22 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 	}
 
 	@Override
+	public void updateTrackedPositionAndAngles(double x, double y, double z, float yaw, float pitch, int interpolationSteps, boolean interpolate) {
+		this.x = x;
+		this.y = y;
+		this.z = z;
+		this.boatYaw = yaw;
+		this.boatPitch = pitch;
+		this.lerpSteps = 10;
+	}
+
+	@Override
 	public void tick() {
+//		nose.setPosition(0, 0, 4);
+//		cockpit.setPosition(0, 0, 0);
+//		tail.setPosition(0, 0.5, -4);
+//		leftWing.setPosition(3.5, 0.3, 1);
+//		rightWing.setPosition(-3.5, 0.3, 1);
 		this.lastLocation = this.location;
 		this.location = this.checkLocation();
 		if (this.location != MonoplaneEntity.Location.UNDER_WATER && this.location != MonoplaneEntity.Location.UNDER_FLOWING_WATER) {
@@ -106,104 +129,119 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 			this.tickMovement();
 		}
 		super.tick();
+		this.lerpTick();
+	}
+
+	private void lerpTick() {
+		if (this.isLogicalSideForUpdatingMovement()) {
+			this.lerpSteps = 0;
+			this.syncPacketPositionCodec(this.getX(), this.getY(), this.getZ());
+		}
+
+		if (this.lerpSteps > 0) {
+			double d = this.getX() + (this.x - this.getX()) / (double)this.lerpSteps;
+			double e = this.getY() + (this.y - this.getY()) / (double)this.lerpSteps;
+			double f = this.getZ() + (this.z - this.getZ()) / (double)this.lerpSteps;
+			double g = MathHelper.wrapDegrees(this.boatYaw - (double)this.getYaw());
+			this.setYaw(this.getYaw() + (float)g / (float)this.lerpSteps);
+			this.setPitch(this.getPitch() + (float)(this.boatPitch - (double)this.getPitch()) / (float)this.lerpSteps);
+			--this.lerpSteps;
+			this.setPosition(d, e, f);
+			this.setRotation(this.getYaw(), this.getPitch());
+		}
 	}
 
 	public void tickMovement() {
-		for (MonoplanePart part : this.parts) {
-			part.tick();
-		}
-		this.prevWingPosition = this.wingPosition;
 		Vec3d vec3d = this.getVelocity();
-		float g = 0.2F / ((float)vec3d.horizontalLength() * 10.0F + 1.0F);
-		g *= (float)Math.pow(2.0, vec3d.y);
-		this.wingPosition += g;
-
-		this.setYaw(MathHelper.wrapDegrees(this.getYaw()));
-		if (this.latestSegment < 0) {
-			for(int i = 0; i < this.segmentCircularBuffer.length; ++i) {
-				this.segmentCircularBuffer[i][0] = this.getYaw();
-				this.segmentCircularBuffer[i][1] = this.getY();
-			}
+		double h = vec3d.x;
+		double i = vec3d.y;
+		double j = vec3d.z;
+		if (Math.abs(vec3d.x) < 0.003) {
+			h = 0.0;
 		}
 
-		if (++this.latestSegment == this.segmentCircularBuffer.length) {
-			this.latestSegment = 0;
+		if (Math.abs(vec3d.y) < 0.003) {
+			i = 0.0;
 		}
 
-		this.segmentCircularBuffer[this.latestSegment][0] = this.getYaw();
-		this.segmentCircularBuffer[this.latestSegment][1] = this.getY();
-		if (this.world.isClient) {
-			if (this.bodyTrackingIncrements > 0) {
-				double d = this.getX() + (this.serverX - this.getX()) / (double)this.bodyTrackingIncrements;
-				double e = this.getY() + (this.serverY - this.getY()) / (double)this.bodyTrackingIncrements;
-				double j = this.getZ() + (this.serverZ - this.getZ()) / (double)this.bodyTrackingIncrements;
-				double k = MathHelper.wrapDegrees(this.serverYaw - (double)this.getYaw());
-				this.setYaw(this.getYaw() + (float)k / (float)this.bodyTrackingIncrements);
-				this.setPitch(this.getPitch() + (float)(this.serverPitch - (double)this.getPitch()) / (float)this.bodyTrackingIncrements);
-				--this.bodyTrackingIncrements;
-				this.setPosition(d, e, j);
-				this.setRotation(this.getYaw(), this.getPitch());
-			}
-		} else {
-			this.bodyYaw = this.getYaw();
-			Vec3d[] vec3ds = new Vec3d[this.parts.length];
-
-			for(int s = 0; s < this.parts.length; ++s) {
-				vec3ds[s] = new Vec3d(this.parts[s].getX(), this.parts[s].getY(), this.parts[s].getZ());
-			}
-
-			float t = (float)(this.getSegmentProperties(5, 1.0F)[1] - this.getSegmentProperties(10, 1.0F)[1]) * 10.0F * (float) (Math.PI / 180.0);
-			float u = MathHelper.cos(t);
-			float v = MathHelper.sin(t);
-			float w = this.getYaw() * (float) (Math.PI / 180.0);
-			float x = MathHelper.sin(w);
-			float y = MathHelper.cos(w);
-//			float wingForwardOffsetX = ;
-			this.movePart(this.nose, x * 0.5F, 0.0, -y * 0.5F);
-			this.movePart(this.cockpit, x * 0.5F, 0.0, -y * 0.5F);
-			this.movePart(this.tail, x * 0.5F, 0.0, -y * 0.5F);
-			this.movePart(this.rightWing, y * 4.5F, 0.3, x * 4.5F);
-			this.movePart(this.leftWing, y * -4.5F, 0.3, x * -4.5F);
-
-			float z = MathHelper.sin(this.getYaw() * (float) (Math.PI / 180.0) - this.yawAcceleration * 0.01F);
-			float aa = MathHelper.cos(this.getYaw() * (float) (Math.PI / 180.0) - this.yawAcceleration * 0.01F);
-			float ab = this.getHeadVerticalMovement();
-			this.movePart(this.nose, (z * 6.5F * u), (ab + v * 6.5F), -aa * 6.5F * u);
-			this.movePart(this.cockpit, z * 5.5F * u, ab + v * 5.5F, -aa * 5.5F * u);
-			double[] ds = this.getSegmentProperties(5, 1.0F);
-
-			for(int ac = 0; ac < 3; ++ac) {
-				MonoplanePart monoplanePart = null;
-				if (ac == 0) {
-					monoplanePart = this.nose;
-				}
-
-				if (ac == 1) {
-					monoplanePart = this.cockpit;
-				}
-
-				if (ac == 2) {
-					monoplanePart = this.tail;
-				}
-
-				double[] es = this.getSegmentProperties(12 + ac * 2, 1.0F);
-				float ad = this.getYaw() * (float) (Math.PI / 180.0) + this.wrapYawChange(es[0] - ds[0]) * (float) (Math.PI / 180.0);
-				float o = MathHelper.sin(ad);
-				float p = MathHelper.cos(ad);
-				float q = 1.5F;
-				float ae = (float)(ac + 1) * 2.0F;
-				this.movePart(monoplanePart, -(x * 1.5F + o * ae) * u, es[1] - ds[1] - (double)((ae + 1.5F) * v) + 1.5, ((y * 1.5F + p * ae) * u));
-			}
-
-			for(int ac = 0; ac < this.parts.length; ++ac) {
-				this.parts[ac].prevX = vec3ds[ac].x;
-				this.parts[ac].prevY = vec3ds[ac].y;
-				this.parts[ac].prevZ = vec3ds[ac].z;
-				this.parts[ac].lastRenderX = vec3ds[ac].x;
-				this.parts[ac].lastRenderY = vec3ds[ac].y;
-				this.parts[ac].lastRenderZ = vec3ds[ac].z;
-			}
+		if (Math.abs(vec3d.z) < 0.003) {
+			j = 0.0;
 		}
+		this.setVelocity(h, i, j);
+
+
+//		for (MonoplanePart part : this.parts) {
+//			part.tick();
+//		}
+//		this.prevWingPosition = this.wingPosition;
+//		Vec3d vec3d = this.getVelocity();
+//		float g = 0.2F / ((float)vec3d.horizontalLength() * 10.0F + 1.0F);
+//		g *= (float)Math.pow(2.0, vec3d.y);
+//		this.wingPosition += g;
+//
+//		this.setYaw(MathHelper.wrapDegrees(this.getYaw()));
+//		if (this.latestSegment < 0) {
+//			for(int i = 0; i < this.segmentCircularBuffer.length; ++i) {
+//				this.segmentCircularBuffer[i][0] = this.getYaw();
+//				this.segmentCircularBuffer[i][1] = this.getY();
+//			}
+//		}
+//
+//		if (++this.latestSegment == this.segmentCircularBuffer.length) {
+//			this.latestSegment = 0;
+//		}
+//
+//		this.segmentCircularBuffer[this.latestSegment][0] = this.getYaw();
+//		this.segmentCircularBuffer[this.latestSegment][1] = this.getY();
+//		if (this.world.isClient) {
+//			if (this.bodyTrackingIncrements > 0) {
+//				double d = this.getX() + (this.serverX - this.getX()) / (double)this.bodyTrackingIncrements;
+//				double e = this.getY() + (this.serverY - this.getY()) / (double)this.bodyTrackingIncrements;
+//				double j = this.getZ() + (this.serverZ - this.getZ()) / (double)this.bodyTrackingIncrements;
+//				double k = MathHelper.wrapDegrees(this.serverYaw - (double)this.getYaw());
+//				this.setYaw(this.getYaw() + (float)k / (float)this.bodyTrackingIncrements);
+//				this.setPitch(this.getPitch() + (float)(this.serverPitch - (double)this.getPitch()) / (float)this.bodyTrackingIncrements);
+//				--this.bodyTrackingIncrements;
+//				this.setPosition(d, e, j);
+//				this.setRotation(this.getYaw(), this.getPitch());
+//			}
+//		} else {
+		this.bodyYaw = this.getYaw();
+		Vec3d[] vec3ds = new Vec3d[this.parts.length];
+
+		for(int s = 0; s < this.parts.length; ++s) {
+			vec3ds[s] = new Vec3d(this.parts[s].getX(), this.parts[s].getY(), this.parts[s].getZ());
+		}
+
+		float t = (float)(this.getSegmentProperties(5, 1.0F)[1] - this.getSegmentProperties(10, 1.0F)[1]) * 10.0F * (float) (Math.PI / 180.0);
+		float u = MathHelper.cos(t);
+		float v = MathHelper.sin(t);
+		float w = this.getYaw() * (float) (Math.PI / 180.0);
+		float x = MathHelper.sin(w);
+		float y = MathHelper.cos(w);
+		this.movePart(this.nose, x * -3.8F, 0.0, -y * -3.8F);
+		this.movePart(this.cockpit, x * -0.5F, 0.0, -y * -0.5F);
+		this.movePart(this.tail, x * 2.5F, 0.0, -y * 2.5F);
+		this.movePart(this.rightWing, y * 4.5F, 0.3, x * 4.5F);
+		this.movePart(this.leftWing, y * -4.5F, 0.3, x * -4.5F);
+
+//		float z = MathHelper.sin(this.getYaw() * (float) (Math.PI / 180.0) - this.yawAcceleration * 0.01F);
+//		float aa = MathHelper.cos(this.getYaw() * (float) (Math.PI / 180.0) - this.yawAcceleration * 0.01F);
+//		float ab = this.getHeadVerticalMovement();
+//		this.movePart(this.nose, (z * 6.5F * u), (ab + v * 6.5F), -aa * 6.5F * u);
+//		this.movePart(this.cockpit, z * 5.5F * u, ab + v * 5.5F, -aa * 5.5F * u);
+//		double[] ds = this.getSegmentProperties(5, 1.0F);
+//		}
+
+		for(int ac = 0; ac < this.parts.length; ++ac) {
+			this.parts[ac].prevX = vec3ds[ac].x;
+			this.parts[ac].prevY = vec3ds[ac].y;
+			this.parts[ac].prevZ = vec3ds[ac].z;
+			this.parts[ac].lastRenderX = vec3ds[ac].x;
+			this.parts[ac].lastRenderY = vec3ds[ac].y;
+			this.parts[ac].lastRenderZ = vec3ds[ac].z;
+		}
+//		}
 	}
 
 	private MonoplaneEntity.Location checkLocation() {
