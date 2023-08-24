@@ -28,8 +28,8 @@ public class BiplaneEntityRenderer extends EntityRenderer<BiplaneEntity> {
 		super.render(entity, yaw, tickDelta, matrices, vertexConsumers, light);
 		matrices.push();
 		matrices.translate(0.0, 1.2, 0.0);
-		matrices.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion(180.0F + entity.getPitch()));
-		matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(entity.getYaw()));
+		matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(-yaw));
+		matrices.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion(180.0F + entity.getPitch(tickDelta)));
 		matrices.translate(0.0, 0.0, -1.0);
 		VertexConsumer vertexConsumer = vertexConsumers.getBuffer(this.model.getLayer(this.getTexture(entity)));
 		this.model.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1.0F, 1.0F, 1.0F, 1.0F);

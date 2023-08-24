@@ -17,6 +17,7 @@ import net.minecraft.util.math.Vec3d;
 public class MonoplanePart extends Entity implements MonoplaneEntityPart {
 	public final MonoplaneEntity owner;
 	public final String name;
+	public ModuleType type;
 	private final EntityDimensions partDimensions;
 	private final Vec3d relativePosition = Vec3d.ZERO;
 
@@ -28,6 +29,11 @@ public class MonoplanePart extends Entity implements MonoplaneEntityPart {
 		this.name = name;
 	}
 
+	public MonoplanePart(MonoplaneEntity owner, String name, float width, float height, ModuleType type) {
+		this(owner, name, width, height);
+		this.type = type;
+	}
+
 	@Override
 	public ItemStack getPickBlockStack() {
 		return ConveyanceItems.MONOPLANE.getDefaultStack();
@@ -35,12 +41,17 @@ public class MonoplanePart extends Entity implements MonoplaneEntityPart {
 
 	@Override
 	public ActionResult interact(PlayerEntity player, Hand hand) {
-		if (player.getStackInHand(hand).isEmpty() && player.isSneaking()) {
-			if (!(player.getAbilities()).creativeMode) {
-				player.setStackInHand(hand, ConveyanceItems.MONOPLANE.getDefaultStack());
+		if (!this.world.isClient) {
+			if (player.getMainHandStack().isEmpty() && player.isSneaking()) {
+				if (!(player.getAbilities()).creativeMode) {
+					player.setStackInHand(hand, ConveyanceItems.MONOPLANE.getDefaultStack());
+				}
+				this.owner.remove(RemovalReason.DISCARDED);
+				return ActionResult.SUCCESS;
 			}
-			this.owner.remove(RemovalReason.DISCARDED);
-			return ActionResult.SUCCESS;
+			if (this.type == ModuleType.COCKPIT) {
+				return player.startRiding(this.getOwner()) ? ActionResult.CONSUME : ActionResult.PASS;
+			}
 		}
 		return super.interact(player, hand);
 	}
@@ -121,5 +132,10 @@ public class MonoplanePart extends Entity implements MonoplaneEntityPart {
 	@Override
 	public boolean shouldSave() {
 		return false;
+	}
+
+	public enum ModuleType {
+		COCKPIT,
+		PROPELLER
 	}
 }

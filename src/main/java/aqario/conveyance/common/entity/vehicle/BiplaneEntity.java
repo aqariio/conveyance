@@ -1,6 +1,5 @@
 package aqario.conveyance.common.entity.vehicle;
 
-import aqario.conveyance.common.item.ConveyanceItems;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
@@ -12,9 +11,12 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.*;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 
 public class BiplaneEntity extends VehicleEntity {
+	private static final float GRAVITATIONAL_CONSTANT = -0.04F;
 	private float velocityDecay;
+	private float yawVelocityDecay;
 	private float yawVelocity;
 	private float velocityMovement;
 	private float yawMovement;
@@ -28,9 +30,27 @@ public class BiplaneEntity extends VehicleEntity {
 //	public final InterpolatedFloat pressingInterpolatedX;
 //	public final InterpolatedFloat pressingInterpolatedY;
 //	public final InterpolatedFloat pressingInterpolatedZ;
+	private boolean pressingLeft;
+	private boolean pressingRight;
+	private boolean pressingForward;
+	private boolean pressingBack;
+
+	public float roll;
+	public float prevRoll;
 
 	public BiplaneEntity(EntityType<? extends BiplaneEntity> type, World world) {
 		super(type, world);
+		this.stepHeight = 0.55f;
+	}
+
+
+
+	public float getRoll() {
+		return roll;
+	}
+
+	public float getRoll(float tickDelta) {
+		return MathHelper.lerp(tickDelta, prevRoll, getRoll());
 	}
 
 	@Override
@@ -61,6 +81,11 @@ public class BiplaneEntity extends VehicleEntity {
 		return 0.8F;
 	}
 
+	@Nullable
+	@Override
+	public Entity getPrimaryPassenger() {
+		return this.getFirstPassenger();
+	}
 
 	@Override
 	public boolean collides() {
@@ -70,6 +95,10 @@ public class BiplaneEntity extends VehicleEntity {
 	@Override
 	public Direction getMovementDirection() {
 		return getHorizontalFacing().rotateYClockwise();
+	}
+
+	private float getTakeoffVelocity() {
+		return 0.6F;
 	}
 
 	@Override
@@ -109,10 +138,10 @@ public class BiplaneEntity extends VehicleEntity {
 	@Override
 	public ActionResult interact(PlayerEntity player, Hand hand) {
 		if (player.getStackInHand(hand).isEmpty() && player.isSneaking()) {
-			if (!(player.getAbilities()).creativeMode) {
-				player.setStackInHand(hand, ConveyanceItems.MONOPLANE.getDefaultStack());
-			}
-			this.remove(RemovalReason.DISCARDED);
+//			if (!(player.getAbilities()).creativeMode) {
+//				player.setStackInHand(hand, ConveyanceItems.MONOPLANE.getDefaultStack());
+//			}
+//			this.remove(RemovalReason.DISCARDED);
 			return ActionResult.SUCCESS;
 		} else {
 			if (!this.world.isClient) {
@@ -135,41 +164,43 @@ public class BiplaneEntity extends VehicleEntity {
 
 	@Override
 	public void tick() {
-		if (this.world.isClient) {
-			this.updateMovement();
-		}
-		if (world.isClient() && getPassengerList().size() > 0) {
+		if (world.isClient() && !getPassengerList().isEmpty()) {
 			Entity pilot = getPassengerList().get(0);
 			MinecraftClient client = MinecraftClient.getInstance();
 			if (pilot instanceof ClientPlayerEntity) {
-				setInputs(getMovementMultiplier(
-						client.options.rightKey.isPressed(),
-						client.options.leftKey.isPressed()
-					), getMovementMultiplier(
-						client.options.jumpKey.isPressed(),
-						client.options.sprintKey.isPressed()
-					),
-					getMovementMultiplier(
-						client.options.forwardKey.isPressed(),
-						client.options.backKey.isPressed()
-					)
-				);
+//				setInputs(
+//						getMovementMultiplier(
+//								client.options.rightKey.isPressed(),
+//								client.options.leftKey.isPressed()
+//						),
+//						getMovementMultiplier(
+//								client.options.forwardKey.isPressed(),
+//								client.options.backKey.isPressed()
+//						),
+//						getMovementMultiplier(
+//								client.options.jumpKey.isPressed(),
+//								client.options.sprintKey.isPressed()
+//						)
+//				);
+				this.setInputs(client.options.leftKey.isPressed(), client.options.rightKey.isPressed(), client.options.forwardKey.isPressed(), client.options.backKey.isPressed());
 			}
 		}
-
-		if (isLogicalSideForUpdatingMovement()) {
+		super.tick();
+		lerpTick();
+		if (this.isLogicalSideForUpdatingMovement()) {
 			updateVelocity();
-
+			if (this.world.isClient) {
+				updateController();
+			}
 			move(MovementType.SELF, getVelocity());
 		}
+		this.checkBlockCollision();
 
 //		if (world.isClient) {
 //			pressingInterpolatedX.update(movementX);
 //			pressingInterpolatedY.update(movementY);
 //			pressingInterpolatedZ.update(movementZ);
 //		}
-		super.tick();
-		this.lerpTick();
 	}
 
 	private void lerpTick() {
@@ -179,14 +210,14 @@ public class BiplaneEntity extends VehicleEntity {
 		}
 
 		if (this.lerpSteps > 0) {
-			double d = this.getX() + (this.x - this.getX()) / (double)this.lerpSteps;
-			double e = this.getY() + (this.y - this.getY()) / (double)this.lerpSteps;
-			double f = this.getZ() + (this.z - this.getZ()) / (double)this.lerpSteps;
+			double lerpX = this.getX() + (this.x - this.getX()) / (double)this.lerpSteps;
+			double lerpY = this.getY() + (this.y - this.getY()) / (double)this.lerpSteps;
+			double lerpZ = this.getZ() + (this.z - this.getZ()) / (double)this.lerpSteps;
 			double g = MathHelper.wrapDegrees(this.planeYaw - (double)this.getYaw());
 			this.setYaw(this.getYaw() + (float)g / (float)this.lerpSteps);
 			this.setPitch(this.getPitch() + (float)(this.planePitch - (double)this.getPitch()) / (float)this.lerpSteps);
 			--this.lerpSteps;
-			this.setPosition(d, e, f);
+			this.setPosition(lerpX, lerpY, lerpZ);
 			this.setRotation(this.getYaw(), this.getPitch());
 		}
 	}
@@ -198,47 +229,100 @@ public class BiplaneEntity extends VehicleEntity {
 		return positive ? 1.0f : -1.0f;
 	}
 
-	private void updateMovement() {
-		if (this.hasPassengers()) {
-			float f = 0.0F;
-//			if (this.pressingLeft) {
-//				--this.yawVelocity;
-//			}
+	protected float getGravity() {
+		Vec3d direction = new Vec3d(MathHelper.sin(-this.getYaw() * (float) (Math.PI / 180.0)), 0.0, MathHelper.cos(this.getYaw() * (float) (Math.PI / 180.0)));
+		float speed = (float)((float)getVelocity().length() * (1.0f - Math.abs(direction.getY())));
+		return Math.max(0.0f, 1.0f - speed * 1.5f) * GRAVITATIONAL_CONSTANT;
+	}
+
+	private void updateController() {
+//		if (this.hasPassengers()) {
+//			float velocity = 0.0F;
+////			if (this.pressingLeft) {
+////				--this.yawVelocity;
+////			}
+////
+////			if (this.pressingRight) {
+////				++this.yawVelocity;
+////			}
 //
-//			if (this.pressingRight) {
-//				++this.yawVelocity;
-//			}
+//			this.yawVelocity += this.yawMovement;
+//
+////			if (this.pressingRight != this.pressingLeft && !this.pressingForward && !this.pressingBack) {
+////				velocity += 0.005F;
+////			}
+//
+//			this.setYaw(this.getYaw() + this.yawVelocity);
+////			if (this.pressingForward) {
+////				velocity += 0.04F;
+////			}
+////
+////			if (this.pressingBack) {
+////				velocity -= 0.005F;
+////			}
+//
+//			velocity += this.velocityMovement * 10.04F;
+//
+//			this.setVelocity(
+//					this.getVelocity()
+//							.add(
+//									MathHelper.sin(-this.getYaw() * (float) (Math.PI / 180.0)) * velocity, 0.0, MathHelper.cos(this.getYaw() * (float) (Math.PI / 180.0)) * velocity
+//							)
+//			);
+//		}
+		if (this.hasPassengers()) {
+			float velocity = 0.0F;
+			if (this.pressingLeft) {
+				this.yawVelocity -= 0.02F;
+			}
 
-			this.yawVelocity += this.yawMovement;
-
-//			if (this.pressingRight != this.pressingLeft && !this.pressingForward && !this.pressingBack) {
-//				f += 0.005F;
-//			}
+			if (this.pressingRight) {
+				this.yawVelocity += 0.02F;
+			}
 
 			this.setYaw(this.getYaw() + this.yawVelocity);
-//			if (this.pressingForward) {
-//				f += 0.04F;
-//			}
-//
-//			if (this.pressingBack) {
-//				f -= 0.005F;
-//			}
+			if (this.pressingForward) {
+				velocity += 0.01F;
+			}
 
-			f += this.velocityMovement;
+			if (this.pressingBack && this.isOnGround() && this.getVelocity().length() > 0) {
+				velocity -= 0.005F;
+			}
 
 			this.setVelocity(
 					this.getVelocity()
 							.add(
-									MathHelper.sin(-this.getYaw() * (float) (Math.PI / 180.0)) * f, 0.0, MathHelper.cos(this.getYaw() * (float) (Math.PI / 180.0)) * f
+                                    MathHelper.sin(-this.getYaw() * (float) (Math.PI / 180.0)) * velocity, 0.0, MathHelper.cos(this.getYaw() * (float) (Math.PI / 180.0)) * velocity
 							)
 			);
+			if (this.getVelocity().length() < this.getTakeoffVelocity()) {
+				this.setPitch(this.getPitch() - velocity);
+			}
 		}
 	}
 
 	public void updateVelocity() {
-		if (onGround) {
-			setPitch((getPitch() + 4.0f) * 0.9f - 4.0f);
+		double gravity = this.hasNoGravity() ? 0.0 : this.getGravity();
+
+		if (this.isOnGround()) {
+			this.velocityDecay = 0.995F;
+			this.yawVelocityDecay = 0.8F;
+//			setPitch((getPitch() + 11.0f) * 0.9f - 11.0f);
+        }
+		this.velocityDecay = 0.995F;
+		Vec3d vec3d = this.getVelocity();
+		this.setVelocity(vec3d.x * (double)this.velocityDecay, vec3d.y + gravity, vec3d.z * (double)this.velocityDecay);
+		if (this.getVelocity().length() < this.getTakeoffVelocity() && this.getPitch() < (getPitch() + 11.0f) * 0.9f - 11.0f) {
+			this.setPitch(this.getPitch() / this.velocityDecay);
 		}
+		this.yawVelocity *= this.velocityDecay;
+    }
+
+	public void setInputs(boolean pressingLeft, boolean pressingRight, boolean pressingForward, boolean pressingBack) {
+		this.pressingLeft = pressingLeft;
+		this.pressingRight = pressingRight;
+		this.pressingForward = pressingForward;
+		this.pressingBack = pressingBack;
 	}
 
 	public void setInputs(float yaw, float velocity, float pitch) {
