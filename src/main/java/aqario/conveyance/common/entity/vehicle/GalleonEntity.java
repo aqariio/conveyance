@@ -9,6 +9,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -79,28 +80,22 @@ public class GalleonEntity extends VehicleEntity {
             return ActionResult.PASS;
         }
         sendPlayerToCabin(player);
-
-//        if (this.ticksUnderwater < 60.0f) {
-//            if (!this.world.isClient) {
-//                return player.startRiding(this) ? ActionResult.CONSUME : ActionResult.PASS;
-//            }
-//            return ActionResult.SUCCESS;
-//        }
         return ActionResult.PASS;
     }
 
     private void sendPlayerToCabin(PlayerEntity player) {
         if (!world.isClient && !(world.getRegistryKey() == ConveyanceDimensions.GALLEON)) {
+			MinecraftServer minecraftServer = ((ServerWorld)world).getServer();
             RegistryKey<World> registryKey = ConveyanceDimensions.GALLEON;
-            ServerWorld serverWorld = ((ServerWorld)world).getServer().getWorld(registryKey);
-            QuiltDimensions.teleport(player, serverWorld, new TeleportTarget(new Vec3d(0.5, 1, 0.5), player.getVelocity(), 0, 0));
+            ServerWorld serverWorld = minecraftServer.getWorld(registryKey);
+			if (serverWorld != null) {
+				if (player.hasVehicle()) {
+					QuiltDimensions.teleport(player.getVehicle(), serverWorld, new TeleportTarget(new Vec3d(0.5, 1, 0.5), player.getVelocity(), 0, 0));
+				}
+				QuiltDimensions.teleport(player, serverWorld, new TeleportTarget(new Vec3d(0.5, 1, 0.5), player.getVelocity(), 0, 0));
+			}
         } else {
             player.sendMessage(Text.translatable("entity.conveyance.galleon.fail"), true);
         }
-    }
-
-    @Override
-    public Packet<?> createSpawnPacket() {
-        return new EntitySpawnS2CPacket(this);
     }
 }

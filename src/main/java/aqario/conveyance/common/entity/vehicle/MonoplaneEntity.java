@@ -3,6 +3,8 @@ package aqario.conveyance.common.entity.vehicle;
 import aqario.conveyance.common.entity.part.MonoplaneMultipartEntity;
 import aqario.conveyance.common.entity.part.MonoplanePart;
 import net.minecraft.block.BlockState;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -14,19 +16,19 @@ import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
 import net.minecraft.predicate.entity.EntityPredicates;
 import net.minecraft.tag.FluidTags;
 import net.minecraft.util.function.BooleanBiFunction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.*;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.qsl.entity.multipart.api.EntityPart;
+import org.quiltmc.qsl.networking.api.PacketByteBufs;
+import org.quiltmc.qsl.networking.api.client.ClientPlayNetworking;
 
 import java.util.List;
 
 public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipartEntity {
+	private static final float GRAVITATIONAL_CONSTANT = -0.04F;
 	private final MonoplanePart[] parts;
 	public final MonoplanePart nose;
 	private final MonoplanePart engine;
@@ -35,6 +37,10 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 	private final MonoplanePart tail;
 	private final MonoplanePart rightWing;
 	private final MonoplanePart leftWing;
+	private boolean pressingLeft;
+	private boolean pressingRight;
+	private boolean pressingForward;
+	private boolean pressingBack;
 	public float prevWingPosition;
 	public float wingPosition;
 	protected int bodyTrackingIncrements;
@@ -69,14 +75,22 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 
 	public MonoplaneEntity(EntityType<? extends MonoplaneEntity> type, World world) {
 		super(type, world);
-		this.nose = new MonoplanePart(this, "nose", 2.5F, 2.5F, MonoplanePart.ModuleType.PROPELLER);
-		this.engine = new MonoplanePart(this, "engine", 2.5F, 2.5F, MonoplanePart.ModuleType.COCKPIT);
-		this.cockpit = new MonoplanePart(this, "cockpit", 2.5F, 2.5F);
-		this.fuselage = new MonoplanePart(this, "fuselage", 2.0F, 2.0F);
-		this.tail = new MonoplanePart(this, "tail", 3.0F, 3.0F);
-		this.rightWing = new MonoplanePart(this, "wing", 4.0F, 0.5F);
-		this.leftWing = new MonoplanePart(this, "wing", 4.0F, 0.5F);
-		this.parts = new MonoplanePart[]{this.nose, this.engine, this.cockpit, this.fuselage, this.tail, this.rightWing, this.leftWing};
+		this.nose = new MonoplanePart(this, 2.5F, 2.5F, new Vec3d(0.0D, 0.0D, 4.5D), new Vec3d(0.0D, 0.0D, 0.0D), MonoplanePart.ModuleType.PROPELLER);
+		this.engine = new MonoplanePart(this, 2.5F, 2.5F, new Vec3d(0.0D, 0.0D, 2.5D), new Vec3d(0.0D, 0.0D, 0.0D), MonoplanePart.ModuleType.COCKPIT);
+		this.cockpit = new MonoplanePart(this, 2.5F, 2.5F, new Vec3d(0.0D, 0.0D, 0.5D), new Vec3d(0.0D, 0.0D, 0.0D));
+		this.fuselage = new MonoplanePart(this, 2.0F, 2.0F, new Vec3d(0.0D, 0.25D, -1.5D), new Vec3d(0.0D, 0.0D, 0.0D));
+		this.tail = new MonoplanePart(this, 3.0F, 3.0F, new Vec3d(0.0D, 0.5D, -3.75D), new Vec3d(0.0D, 0.0D, 0.0D));
+		this.rightWing = new MonoplanePart(this, 4.0F, 0.5F, new Vec3d(-3.0D, 0.5D, 1.5D), new Vec3d(0.0D, 0.0D, 0.0D));
+		this.leftWing = new MonoplanePart(this, 4.0F, 0.5F, new Vec3d(3.0D, 0.5D, 1.5D), new Vec3d(0.0D, 0.0D, 0.0D));
+		this.parts = new MonoplanePart[] {
+			this.nose,
+			this.engine,
+			this.cockpit,
+			this.fuselage,
+			this.tail,
+			this.rightWing,
+			this.leftWing
+		};
 		this.noClip = false;
 	}
 
@@ -106,6 +120,17 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 
 	public float getMountedXOffset() {
 		return 0.75F;
+	}
+
+	@Nullable
+	@Override
+	public Entity getPrimaryPassenger() {
+		return this.getFirstPassenger();
+	}
+
+	@Override
+	public Direction getMovementDirection() {
+		return getHorizontalFacing().rotateYClockwise();
 	}
 
 	@Override
@@ -164,27 +189,55 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 
 	@Override
 	public void tick() {
-//		nose.setPosition(0, 0, 4);
-//		cockpit.setPosition(0, 0, 0);
-//		tail.setPosition(0, 0.5, -4);
-//		leftWing.setPosition(3.5, 0.3, 1);
-//		rightWing.setPosition(-3.5, 0.3, 1);
-		this.lastLocation = this.location;
-		this.location = this.checkLocation();
-		if (this.location != MonoplaneEntity.Location.UNDER_WATER && this.location != MonoplaneEntity.Location.UNDER_FLOWING_WATER) {
-			this.ticksUnderwater = 0.0F;
-		} else {
-			++this.ticksUnderwater;
-		}
+//		this.lastLocation = this.location;
+//		this.location = this.checkLocation();
+//		if (this.location != MonoplaneEntity.Location.UNDER_WATER && this.location != MonoplaneEntity.Location.UNDER_FLOWING_WATER) {
+//			this.ticksUnderwater = 0.0F;
+//		} else {
+//			++this.ticksUnderwater;
+//		}
+//
+//		if (!this.world.isClient && this.ticksUnderwater >= 60.0F) {
+//			this.removeAllPassengers();
+//		}
 
-		if (!this.world.isClient && this.ticksUnderwater >= 60.0F) {
-			this.removeAllPassengers();
+		if (world.isClient() && !getPassengerList().isEmpty()) {
+			Entity pilot = getPassengerList().get(0);
+			MinecraftClient client = MinecraftClient.getInstance();
+			if (pilot instanceof ClientPlayerEntity) {
+//				setInputs(
+//						getMovementMultiplier(
+//								client.options.rightKey.isPressed(),
+//								client.options.leftKey.isPressed()
+//						),
+//						getMovementMultiplier(
+//								client.options.forwardKey.isPressed(),
+//								client.options.backKey.isPressed()
+//						),
+//						getMovementMultiplier(
+//								client.options.jumpKey.isPressed(),
+//								client.options.sprintKey.isPressed()
+//						)
+//				);
+				this.setInputs(client.options.leftKey.isPressed(), client.options.rightKey.isPressed(), client.options.forwardKey.isPressed(), client.options.backKey.isPressed());
+			}
 		}
+		super.tick();
 		if (!this.isRemoved()) {
 			this.tickMovement();
 		}
-		super.tick();
 		this.lerpTick();
+		if (this.isLogicalSideForUpdatingMovement()) {
+			updateVelocity();
+			if (this.world.isClient) {
+				updateController();
+			}
+			move(MovementType.SELF, getVelocity());
+		}
+		for (MonoplanePart part : this.parts) {
+			part.checkBlockCollision();
+		}
+//		this.checkBlockCollision();
 	}
 
 	private void lerpTick() {
@@ -206,7 +259,25 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 		}
 	}
 
+	protected float getGravity() {
+		Vec3d direction = new Vec3d(MathHelper.sin(-this.getYaw() * (float) (Math.PI / 180.0)), 0.0, MathHelper.cos(this.getYaw() * (float) (Math.PI / 180.0)));
+		float speed = (float)((float)getVelocity().length() * (1.0f - Math.abs(direction.getY())));
+		return Math.max(0.0f, 1.0f - speed * 1.5f) * GRAVITATIONAL_CONSTANT;
+	}
+
 	public void tickMovement() {
+//		if (!this.world.isClient) {
+//			boolean collides = false;
+//			for (MonoplanePart part : this.parts) {
+//				if (part.wouldCollideWithBlocks(Vec3d.ZERO, getPitch(), getYaw(), 0.0F)) {
+//					collides = true;
+//					break;
+//				}
+//			}
+//			if (collides) {
+//				setPosition(getPos().add(0.0D, 0.01D, 0.0D));
+//			}
+//		}
 		Vec3d vec3d = this.getVelocity();
 		double h = vec3d.x;
 		double i = vec3d.y;
@@ -224,10 +295,6 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 		}
 		this.setVelocity(h, i, j);
 
-
-//		for (MonoplanePart part : this.parts) {
-//			part.tick();
-//		}
 //		this.prevWingPosition = this.wingPosition;
 //		Vec3d vec3d = this.getVelocity();
 //		float g = 0.2F / ((float)vec3d.horizontalLength() * 10.0F + 1.0F);
@@ -275,20 +342,30 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 		float x = MathHelper.sin(w);
 		float y = MathHelper.cos(w);
 
+
+		float pitchDegrees = this.getPitch() * (float) (Math.PI / 180.0);
+		float pitchSin = MathHelper.sin(pitchDegrees);
+		float pitchCos = MathHelper.cos(pitchDegrees);
+
 		float w_ = (this.getYaw() - 90) * (float) (Math.PI / 180.0);
 		float x_ = MathHelper.sin(w_);
 		float y_ = MathHelper.cos(w_);
 
-		this.movePart(this.nose, x * -4.5F, 0.0, -y * -4.5F);
-		this.movePart(this.engine, x * -2.5F, 0.0, -y * -2.5F);
-		this.movePart(this.cockpit, x * -0.5F, 0.0, -y * -0.5F);
-		this.movePart(this.fuselage, x * 1.5F, 0.25, -y * 1.5F);
-		this.movePart(this.tail, x * 3.75F, 0.5, -y * 3.75F);
-		this.movePart(this.rightWing,  x_ * -(4 - 1), 0.5, y_ * (4 + 1));
-		this.movePart(this.leftWing, y * -3.5F, 0.5, x * -3.5F);
+//		this.movePart(this.nose, x * -4.5F, 0.0, -y * -4.5F);
+//		this.movePart(this.engine, x * -2.5F, 0.0, -y * -2.5F);
+//		this.movePart(this.cockpit, x * -0.5F, 0.0, -y * -0.5F);
+//		this.movePart(this.fuselage, x * 1.5F, 0.25, -y * 1.5F);
+//		this.movePart(this.tail, x * 3.75F, 0.5, -y * 3.75F);
+//		this.movePart(this.rightWing,  x_ * -(4 - 1), 0.5, y_ * (4 + 1));
+//		this.movePart(this.leftWing, y * -3.5F, 0.5, x * -3.5F);
 
 		if (!this.world.isClient) {
-			this.damageLivingEntities(this.world.getOtherEntities(this, this.nose.getBoundingBox().expand(0.5), EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR));
+			this.damageLivingEntities(this.world.getOtherEntities(this, this.nose.getBoundingBox().expand(0.5), EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR), 5.0F);
+			if (this.getVelocity().length() > 0.25F) {
+				for (MonoplanePart part : this.parts) {
+					this.damageLivingEntities(this.world.getOtherEntities(this, part.getBoundingBox().expand(0.5), EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR), MathHelper.ceil(MathHelper.clamp(this.getVelocity().length() * 2.0, 0.0, 2.147483647E9)));
+				}
+			}
 		}
 
 //		float z = MathHelper.sin(this.getYaw() * (float) (Math.PI / 180.0) - this.yawAcceleration * 0.01F);
@@ -299,6 +376,10 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 //		double[] ds = this.getSegmentProperties(5, 1.0F);
 //		}
 
+		for (MonoplanePart part : this.parts) {
+			rotatePart(part, -getPitch() * 3.1415927F / 180.0F, -getYaw() * 3.1415927F / 180.0F);
+		}
+
 		for(int ac = 0; ac < this.parts.length; ++ac) {
 			this.parts[ac].prevX = vec3ds[ac].x;
 			this.parts[ac].prevY = vec3ds[ac].y;
@@ -307,15 +388,109 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 			this.parts[ac].lastRenderY = vec3ds[ac].y;
 			this.parts[ac].lastRenderZ = vec3ds[ac].z;
 		}
-//		}
 	}
 
-	private void damageLivingEntities(List<Entity> entities) {
+	public void rotatePart(MonoplanePart part, float x, float y) {
+		Vec3d difference = part.getAbsolutePosition().subtract(part.getAbsolutePivot());
+		difference = difference.rotateX(x).rotateY(y);
+		Vec3d transformedPos = part.getAbsolutePivot().subtract(part.getAbsolutePosition()).add(difference);
+		part.move(transformedPos);
+	}
+
+	private void damageLivingEntities(List<Entity> entities, float amount) {
 		for(Entity entity : entities) {
 			if (entity instanceof LivingEntity) {
-				entity.damage(DamageSource.thorns(this), 5.0F);
+				entity.damage(DamageSource.thorns(this), amount);
 			}
 		}
+	}
+
+//	private void launchLivingEntities(List<Entity> entities) {
+//		double d = (this.body.getBoundingBox().minX + this.body.getBoundingBox().maxX) / 2.0;
+//		double e = (this.body.getBoundingBox().minZ + this.body.getBoundingBox().maxZ) / 2.0;
+//
+//		for(Entity entity : entities) {
+//			if (entity instanceof LivingEntity) {
+//				double f = entity.getX() - d;
+//				double g = entity.getZ() - e;
+//				double h = Math.max(f * f + g * g, 0.1);
+//				entity.addVelocity(f / h * 4.0, 0.2F, g / h * 4.0);
+//			}
+//		}
+//	}
+
+	private void updateController() {
+		if (this.hasPassengers()) {
+			double planeVelocity = getVelocity().horizontalLength() / 80.0D;
+			float velocity = 0.0F;
+
+			if (this.pressingLeft) {
+				this.yawVelocity = (float) Math.max(-0.5F, this.yawVelocity - planeVelocity);
+			}
+
+			if (this.pressingRight) {
+				this.yawVelocity = (float) Math.min(0.5F, this.yawVelocity + planeVelocity);
+			}
+
+			if (this.pressingForward) {
+				velocity += 0.0075F;
+			}
+
+			if (this.pressingBack/* && this.isOnGround()*/) {
+//				velocity -= 0.005F;
+				Vec3d vec3d = this.getVelocity();
+				this.setVelocity(vec3d.x * 0.98D, vec3d.y, vec3d.z * 0.98D);
+				if (this.getVelocity().horizontalLength() > 0) {
+					velocity -= 0.005F;
+				}
+			}
+
+//			for (MonoplanePart part : this.parts) {
+//				if (part.wouldCollideWithBlocks(getVelocity().add((MathHelper.sin(-getYaw() * 0.017453292F) * velocity), 0, (MathHelper.cos(getYaw() * 0.017453292F) * velocity)), 0.0F, getYaw() + this.yawVelocity, 0.0F)) {
+//					setVelocity(0.0D, 0.0D, 0.0D);
+//					this.yawVelocity = 0.0F;
+//					return;
+//				}
+//			}
+
+			this.setYaw(this.getYaw() + this.yawVelocity);
+
+			if (this.getVelocity().horizontalLength() < 10.0D) {
+				this.setVelocity(
+					this.getVelocity()
+						.add(
+							MathHelper.sin(-this.getYaw() * (float) (Math.PI / 180.0)) * velocity, 0.0, MathHelper.cos(this.getYaw() * (float) (Math.PI / 180.0)) * velocity
+						)
+				);
+			}
+		}
+	}
+
+	public void updateVelocity() {
+		double gravity = this.hasNoGravity() ? 0.0 : this.getGravity();
+		if (this.isOnGround()) {
+			this.velocityDecay = 0.9999F;
+			setPitch((getPitch() + 8.7f) * 0.9f - 8.7f);
+		}
+		float yawVelocityDecay = 0.992F;
+		this.velocityDecay = 0.999F;
+		Vec3d vec3d = this.getVelocity();
+		this.setVelocity(vec3d.x * (double)this.velocityDecay, vec3d.y + gravity, vec3d.z * (double)this.velocityDecay);
+		// sideways velocity decay
+//		this.setVelocity(
+//			this.getVelocity()
+//				.multiply(
+//					MathHelper.cos(this.getYaw() * (float) (Math.PI / 180.0)) * 0.9, 0.0, MathHelper.sin(-this.getYaw() * (float) (Math.PI / 180.0)) * 0.9
+//				)
+//		);
+		this.yawVelocity *= yawVelocityDecay;
+	}
+
+	public void setInputs(boolean pressingLeft, boolean pressingRight, boolean pressingForward, boolean pressingBack) {
+		this.pressingLeft = pressingLeft;
+		this.pressingRight = pressingRight;
+		this.pressingForward = pressingForward;
+		this.pressingBack = pressingBack;
 	}
 
 	private MonoplaneEntity.Location checkLocation() {
@@ -434,16 +609,9 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 		return bl ? MonoplaneEntity.Location.UNDER_WATER : null;
 	}
 
-	@Override
-	public void move(MovementType movementType, Vec3d movement) {
-		for (MonoplanePart part : this.parts) {
-			this.movePart(part, movement.x, movement.y, movement.z);
-		}
-		super.move(movementType, movement);
-	}
-
 	private void movePart(MonoplanePart monoplanePart, double dx, double dy, double dz) {
 		monoplanePart.setPosition(this.getX() + dx, this.getY() + dy, this.getZ() + dz);
+//		monoplanePart.move(MovementType.SELF, new Vec3d(dx, dy, dz));
 	}
 
 	public MonoplanePart[] getBodyParts() {

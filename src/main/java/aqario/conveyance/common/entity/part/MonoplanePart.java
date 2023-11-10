@@ -8,30 +8,54 @@ import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.Packet;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.*;
+import org.quiltmc.qsl.entity.multipart.api.AbstractEntityPart;
 
-public class MonoplanePart extends Entity implements MonoplaneEntityPart {
-	public final MonoplaneEntity owner;
-	public final String name;
+public class MonoplanePart extends AbstractEntityPart<MonoplaneEntity> implements MonoplaneEntityPart {
+	private final MonoplaneEntity owner;
 	public ModuleType type;
-	private final EntityDimensions partDimensions;
-	private final Vec3d relativePosition = Vec3d.ZERO;
 
-	public MonoplanePart(MonoplaneEntity owner, String name, float width, float height) {
-		super(owner.getType(), owner.world);
-		this.partDimensions = EntityDimensions.fixed(width, height);
+	public MonoplanePart(MonoplaneEntity owner, float width, float height, Vec3d relativePosition, Vec3d relativePivot) {
+		super(owner, width, height);
+		setRelativePosition(relativePosition);
+		setPivot(relativePivot);
 		this.calculateDimensions();
 		this.owner = owner;
-		this.name = name;
 	}
 
-	public MonoplanePart(MonoplaneEntity owner, String name, float width, float height, ModuleType type) {
-		this(owner, name, width, height);
+	public MonoplanePart(MonoplaneEntity owner, float width, float height, Vec3d relativePosition, Vec3d relativePivot, ModuleType type) {
+		this(owner, width, height, relativePosition, relativePivot);
 		this.type = type;
+	}
+
+	public boolean wouldCollideWithBlocks(Vec3d velocity, float pitch, float yaw, float roll) {
+		Vec3f relativePos = new Vec3f(getAbsolutePosition().subtract(getAbsolutePivot()));
+		relativePos.rotate(new Quaternion(-pitch, -yaw, -roll, true));
+		Vec3d transformedPos = getAbsolutePivot().subtract(getAbsolutePosition()).add(relativePos.getX(), relativePos.getY(), relativePos.getZ());
+		Box box = this.getDimensions(this.getPose()).getBoxAt(getAbsolutePosition().add(transformedPos));
+		BlockPos blockPos = new BlockPos(box.minX + velocity.getX() + 0.001D, box.minY + velocity.getY() + 0.001D, box.minZ + velocity.getZ() + 0.001D);
+		BlockPos blockPos2 = new BlockPos(box.maxX + velocity.getX() - 0.001D, box.maxY + velocity.getY() - 0.001D, box.maxZ + velocity.getZ() - 0.001D);
+		if (this.world.isRegionLoaded(blockPos, blockPos2)) {
+			BlockPos.Mutable mutable = new BlockPos.Mutable();
+			for (int i = blockPos.getX(); i <= blockPos2.getX(); i++) {
+				for (int j = blockPos.getY(); j <= blockPos2.getY(); j++) {
+					for (int k = blockPos.getZ(); k <= blockPos2.getZ(); k++) {
+						mutable.set(i, j, k);
+						if (!this.world.getBlockState(mutable).getCollisionShape(this.world, mutable).isEmpty()) {
+							return true;
+						}
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public void checkBlockCollision() {
+		super.checkBlockCollision();
 	}
 
 	@Override
@@ -56,36 +80,7 @@ public class MonoplanePart extends Entity implements MonoplaneEntityPart {
 		return super.interact(player, hand);
 	}
 
-	public void move(double dx, double dy, double dz) {
-		this.prevX = this.lastRenderX = this.getX();
-		this.prevY = this.lastRenderY = this.getY();
-		this.prevZ = this.lastRenderZ = this.getZ();
-		var newPos = this.getAbsolutePosition().add(dx, dy, dz);
-		this.setPosition(newPos);
-	}
-
-	public Vec3d getAbsolutePosition() {
-		return this.owner.getPos().add(this.relativePosition);
-	}
-
-	@Override
-	public MonoplaneEntity getOwner() {
-		return this.owner;
-	}
-
-	@Override
-	protected void initDataTracker() {
-	}
-
-	@Override
-	protected void readCustomDataFromNbt(NbtCompound nbt) {
-	}
-
-	@Override
-	protected void writeCustomDataToNbt(NbtCompound nbt) {
-	}
-
-	@Override
+    @Override
 	public boolean collidesWith(Entity other) {
 		return MonoplanePart.canCollide(this, other);
 	}
@@ -119,22 +114,7 @@ public class MonoplanePart extends Entity implements MonoplaneEntityPart {
 		return this == entity || this.owner == entity;
 	}
 
-	@Override
-	public Packet<?> createSpawnPacket() {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public EntityDimensions getDimensions(EntityPose pose) {
-		return this.partDimensions;
-	}
-
-	@Override
-	public boolean shouldSave() {
-		return false;
-	}
-
-	public enum ModuleType {
+    public enum ModuleType {
 		COCKPIT,
 		PROPELLER
 	}

@@ -20,7 +20,7 @@ public class ConveyanceEntityType {
 		QuiltEntityTypeBuilder.create()
 			.entityFactory(MonoplaneEntity::new)
 			.spawnGroup(SpawnGroup.MISC)
-			.setDimensions(EntityDimensions.fixed(12.0F, 2.5F))
+			.setDimensions(EntityDimensions.fixed(10.0F, 2.5F))
 			.build()
 	);
 

@@ -272,12 +272,14 @@ public class BiplaneEntity extends VehicleEntity {
 //		}
 		if (this.hasPassengers()) {
 			float velocity = 0.0F;
-			if (this.pressingLeft) {
-				this.yawVelocity -= 0.02F;
-			}
+			if (this.getVelocity().length() > 0) {
+				if (this.pressingLeft) {
+					this.yawVelocity -= 0.02F;
+				}
 
-			if (this.pressingRight) {
-				this.yawVelocity += 0.02F;
+				if (this.pressingRight) {
+					this.yawVelocity += 0.02F;
+				}
 			}
 
 			this.setYaw(this.getYaw() + this.yawVelocity);

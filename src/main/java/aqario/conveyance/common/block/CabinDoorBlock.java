@@ -1,5 +1,6 @@
 package aqario.conveyance.common.block;
 
+import aqario.conveyance.common.world.dimension.ConveyanceDimensions;
 import net.minecraft.block.*;
 import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.block.piston.PistonBehavior;
@@ -7,6 +8,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.DirectionProperty;
@@ -96,10 +98,16 @@ public class CabinDoorBlock extends Block {
 
     @Override
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
-        if (world instanceof ServerWorld && !(world.getRegistryKey() == World.OVERWORLD)) {
+        if (world instanceof ServerWorld && world.getRegistryKey() == ConveyanceDimensions.GALLEON) {
+			MinecraftServer minecraftServer = world.getServer();
             RegistryKey<World> registryKey = World.OVERWORLD;
-            ServerWorld serverWorld = ((ServerWorld)world).getServer().getWorld(registryKey);
-            QuiltDimensions.teleport(player, serverWorld, new TeleportTarget(new Vec3d(0.5, 100, 0.5), player.getVelocity(), 0, 0));
+            ServerWorld serverWorld = minecraftServer.getWorld(registryKey);
+			if (serverWorld != null) {
+				if (player.hasVehicle()) {
+					QuiltDimensions.teleport(player.getVehicle(), serverWorld, new TeleportTarget(new Vec3d(0.5, 100, 0.5), player.getVelocity(), 0, 0));
+				}
+				QuiltDimensions.teleport(player, serverWorld, new TeleportTarget(new Vec3d(0.5, 100, 0.5), player.getVelocity(), 0, 0));
+			}
             return ActionResult.success(world.isClient);
         }
         return ActionResult.FAIL;
