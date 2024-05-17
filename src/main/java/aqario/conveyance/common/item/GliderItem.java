@@ -33,7 +33,7 @@ public class GliderItem extends Item {
     public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
         ItemStack itemStack = user.getStackInHand(hand);
         BlockHitResult hitResult = BoatItem.raycast(world, user, RaycastContext.FluidHandling.ANY);
-        if (((HitResult)hitResult).getType() == HitResult.Type.MISS) {
+        if (((HitResult) hitResult).getType() == HitResult.Type.MISS) {
             return TypedActionResult.pass(itemStack);
         }
         Vec3d vec3d = user.getRotationVec(1.0f);
@@ -47,7 +47,7 @@ public class GliderItem extends Item {
                 return TypedActionResult.pass(itemStack);
             }
         }
-        if (((HitResult)hitResult).getType() == HitResult.Type.BLOCK) {
+        if (((HitResult) hitResult).getType() == HitResult.Type.BLOCK) {
             BoatEntity boatEntity = new BoatEntity(world, hitResult.getPos().x, hitResult.getPos().y, hitResult.getPos().z);
             boatEntity.setYaw(user.getYaw());
             if (!world.isSpaceEmpty(boatEntity, boatEntity.getBoundingBox())) {
@@ -55,7 +55,7 @@ public class GliderItem extends Item {
             }
             if (!world.isClient) {
                 world.spawnEntity(boatEntity);
-				world.emitGameEvent(user, GameEvent.ENTITY_PLACE, new BlockPos(hitResult.getPos()));
+                world.emitGameEvent(user, GameEvent.ENTITY_PLACE, new BlockPos(hitResult.getPos()));
                 if (!user.getAbilities().creativeMode) {
                     itemStack.decrement(1);
                 }

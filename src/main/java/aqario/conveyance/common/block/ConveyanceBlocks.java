@@ -5,7 +5,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.Material;
 import net.minecraft.item.BlockItem;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.util.Identifier;
@@ -29,12 +28,12 @@ public class ConveyanceBlocks {
         return Registry.register(Registry.BLOCK, new Identifier(Conveyance.ID, id), block);
     }
 
-    private static Item registerDoorBlockItem(String id, Block block) {
-        return Registry.register(Registry.ITEM, new Identifier(Conveyance.ID, id), new BlockItem(block, new QuiltItemSettings().group(ItemGroup.BUILDING_BLOCKS)));
+    private static void registerDoorBlockItem(String id, Block block) {
+        Registry.register(Registry.ITEM, new Identifier(Conveyance.ID, id), new BlockItem(block, new QuiltItemSettings().group(ItemGroup.BUILDING_BLOCKS)));
     }
 
-    private static Item registerBlockItem(String id, Block block, ItemGroup group) {
-        return Registry.register(Registry.ITEM, new Identifier(Conveyance.ID, id), new BlockItem(block, new QuiltItemSettings().group(group)));
+    private static void registerBlockItem(String id, Block block, ItemGroup group) {
+        Registry.register(Registry.ITEM, new Identifier(Conveyance.ID, id), new BlockItem(block, new QuiltItemSettings().group(group)));
     }
 
     public static void init() {

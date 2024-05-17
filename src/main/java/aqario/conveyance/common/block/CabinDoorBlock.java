@@ -34,6 +34,7 @@ public class CabinDoorBlock extends Block {
     protected static final VoxelShape SOUTH_SHAPE = Block.createCuboidShape(0.0, 0.0, 13.0, 16.0, 16.0, 16.0);
     protected static final VoxelShape EAST_SHAPE = Block.createCuboidShape(13.0, 0.0, 0.0, 16.0, 16.0, 16.0);
     protected static final VoxelShape WEST_SHAPE = Block.createCuboidShape(0.0, 0.0, 0.0, 3.0, 16.0, 16.0);
+
     public CabinDoorBlock(Settings settings) {
         super(settings);
         this.setDefaultState(this.stateManager.getDefaultState().with(FACING, Direction.NORTH).with(HALF, DoubleBlockHalf.LOWER));
@@ -99,15 +100,15 @@ public class CabinDoorBlock extends Block {
     @Override
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         if (world instanceof ServerWorld && world.getRegistryKey() == ConveyanceDimensions.GALLEON) {
-			MinecraftServer minecraftServer = world.getServer();
+            MinecraftServer minecraftServer = world.getServer();
             RegistryKey<World> registryKey = World.OVERWORLD;
             ServerWorld serverWorld = minecraftServer.getWorld(registryKey);
-			if (serverWorld != null) {
-				if (player.hasVehicle()) {
-					QuiltDimensions.teleport(player.getVehicle(), serverWorld, new TeleportTarget(new Vec3d(0.5, 100, 0.5), player.getVelocity(), 0, 0));
-				}
-				QuiltDimensions.teleport(player, serverWorld, new TeleportTarget(new Vec3d(0.5, 100, 0.5), player.getVelocity(), 0, 0));
-			}
+            if (serverWorld != null) {
+                if (player.hasVehicle()) {
+                    QuiltDimensions.teleport(player.getVehicle(), serverWorld, new TeleportTarget(new Vec3d(0.5, 100, 0.5), player.getVelocity(), 0, 0));
+                }
+                QuiltDimensions.teleport(player, serverWorld, new TeleportTarget(new Vec3d(0.5, 100, 0.5), player.getVelocity(), 0, 0));
+            }
             return ActionResult.success(world.isClient);
         }
         return ActionResult.FAIL;
