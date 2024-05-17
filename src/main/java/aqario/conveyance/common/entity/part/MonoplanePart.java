@@ -3,8 +3,6 @@ package aqario.conveyance.common.entity.part;
 import aqario.conveyance.common.entity.vehicle.MonoplaneEntity;
 import aqario.conveyance.common.item.ConveyanceItems;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityDimensions;
-import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
