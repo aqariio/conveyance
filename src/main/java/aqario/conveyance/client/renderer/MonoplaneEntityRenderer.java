@@ -29,6 +29,7 @@ public class MonoplaneEntityRenderer extends EntityRenderer<MonoplaneEntity> {
         matrices.translate(0.0, 1.2, 0.0);
         matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(-yaw));
         matrices.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion(180.0F + entity.getPitch(tickDelta)));
+        matrices.multiply(Vec3f.POSITIVE_Z.getDegreesQuaternion(entity.getRoll(tickDelta)));
         matrices.translate(0.0, 0.0, -1.0);
         VertexConsumer vertexConsumer = vertexConsumers.getBuffer(this.model.getLayer(this.getTexture(entity)));
         this.model.setAngles(entity, tickDelta, 0.0F, -0.1F, 0.0F, 0.0F);

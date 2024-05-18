@@ -11,12 +11,18 @@ public class MonoplaneEntityModel extends EntityModel<MonoplaneEntity> {
     private final ModelPart propeller;
     private final ModelPart elevator;
     private final ModelPart rudder;
+    private final ModelPart backWheel;
+    private final ModelPart leftAileron;
+    private final ModelPart rightAileron;
 
     public MonoplaneEntityModel(ModelPart root) {
         this.plane = root.getChild("plane");
         this.propeller = plane.getChild("propeller");
         this.elevator = plane.getChild("tail").getChild("elevator");
         this.rudder = plane.getChild("tail").getChild("rudder");
+        this.backWheel = plane.getChild("landingGear").getChild("backWheel");
+        this.leftAileron = plane.getChild("wings").getChild("leftWing").getChild("leftAileron");
+        this.rightAileron = plane.getChild("wings").getChild("rightWing").getChild("rightAileron");
     }
 
     public static TexturedModelData getTexturedModelData() {
@@ -39,13 +45,15 @@ public class MonoplaneEntityModel extends EntityModel<MonoplaneEntity> {
 
         ModelPartData leftWing = wings.addChild("leftWing", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
 
-        ModelPartData aileron_r1 = leftWing.addChild("aileron_r1", ModelPartBuilder.create().uv(121, 61).cuboid(0.0F, -2.0F, 0.0F, 64.0F, 2.0F, 16.0F, new Dilation(0.0F))
-            .uv(121, 0).cuboid(0.0F, -3.0F, -32.0F, 80.0F, 3.0F, 32.0F, new Dilation(0.0F)), ModelTransform.of(10.0F, -4.0F, 8.0F, 0.0F, 0.0F, -0.0873F));
+        ModelPartData wing_r1 = leftWing.addChild("wing_r1", ModelPartBuilder.create().uv(121, 0).cuboid(0.0F, -3.0F, -28.0F, 80.0F, 3.0F, 32.0F, new Dilation(0.0F)), ModelTransform.of(10.0F, -4.0F, 4.0F, 0.0F, 0.0F, -0.0873F));
+
+        ModelPartData leftAileron = leftWing.addChild("leftAileron", ModelPartBuilder.create().uv(121, 61).cuboid(0.0F, -1.0F, 0.0F, 64.0F, 2.0F, 16.0F, new Dilation(0.0F)), ModelTransform.of(10.0F, -5.0F, 8.0F, 0.0F, 0.0F, -0.0873F));
 
         ModelPartData rightWing = wings.addChild("rightWing", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
 
-        ModelPartData aileron_r2 = rightWing.addChild("aileron_r2", ModelPartBuilder.create().uv(121, 61).mirrored().cuboid(-64.0F, -2.0F, 0.0F, 64.0F, 2.0F, 16.0F, new Dilation(0.0F)).mirrored(false)
-            .uv(121, 0).mirrored().cuboid(-80.0F, -3.0F, -32.0F, 80.0F, 3.0F, 32.0F, new Dilation(0.0F)).mirrored(false), ModelTransform.of(-10.0F, -4.0F, 8.0F, 0.0F, 0.0F, 0.0873F));
+        ModelPartData wing_r2 = rightWing.addChild("wing_r2", ModelPartBuilder.create().uv(121, 0).mirrored().cuboid(-80.0F, -3.0F, -28.0F, 80.0F, 3.0F, 32.0F, new Dilation(0.0F)).mirrored(false), ModelTransform.of(-10.0F, -4.0F, 4.0F, 0.0F, 0.0F, 0.0873F));
+
+        ModelPartData rightAileron = rightWing.addChild("rightAileron", ModelPartBuilder.create().uv(121, 61).mirrored().cuboid(-64.0F, -1.0F, 0.0F, 64.0F, 2.0F, 16.0F, new Dilation(0.0F)).mirrored(false), ModelTransform.of(-10.0F, -5.0F, 8.0F, 0.0F, 0.0F, 0.0873F));
 
         ModelPartData tail = plane.addChild("tail", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, -12.0F, 16.0F));
 
@@ -67,17 +75,20 @@ public class MonoplaneEntityModel extends EntityModel<MonoplaneEntity> {
 
         ModelPartData wheel_r2 = rightWheel.addChild("wheel_r2", ModelPartBuilder.create().uv(53, 57).cuboid(0.0F, -6.0F, -6.0F, 2.0F, 12.0F, 12.0F, new Dilation(0.0F)), ModelTransform.of(-1.0F, 15.0F, 0.0F, 0.0F, 0.0F, -0.1745F));
 
-        ModelPartData backWheel = landingGear.addChild("backWheel", ModelPartBuilder.create().uv(0, 0).cuboid(-1.0F, -19.0F, 76.0F, 2.0F, 8.0F, 8.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, 7.0F, 5.0F));
+        ModelPartData backWheel = landingGear.addChild("backWheel", ModelPartBuilder.create().uv(0, 0).cuboid(-1.0F, 3.0F, -2.0F, 2.0F, 8.0F, 8.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, -15.0F, 83.0F));
 
-        ModelPartData axle_r1 = backWheel.addChild("axle_r1", ModelPartBuilder.create().uv(56, 0).cuboid(-0.5F, -0.5F, -0.5F, 1.0F, 8.0F, 1.0F, new Dilation(0.0F)), ModelTransform.of(-1.5F, -22.0F, 78.5F, 0.2182F, 0.0F, 0.0F));
+        ModelPartData axle_r1 = backWheel.addChild("axle_r1", ModelPartBuilder.create().uv(56, 0).cuboid(-0.5F, -0.5F, -0.5F, 1.0F, 8.0F, 1.0F, new Dilation(0.0F)), ModelTransform.of(-1.5F, 0.0F, 0.5F, 0.2182F, 0.0F, 0.0F));
         return TexturedModelData.of(modelData, 512, 512);
     }
 
     @Override
-    public void setAngles(MonoplaneEntity monoplaneEntity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
+    public void setAngles(MonoplaneEntity plane, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
         this.propeller.roll -= 2.432F;
-        this.elevator.pitch = -monoplaneEntity.getPitchInput() / 3;
-        this.rudder.yaw = -monoplaneEntity.getYawInput() / 2;
+        this.elevator.pitch = -plane.getPitchInput() / 5;
+        this.rudder.yaw = -plane.getYawInput() / 2;
+        this.backWheel.yaw = -plane.getYawVelocity() / 2;
+        this.leftAileron.pitch = plane.getRollInput() / 4;
+        this.rightAileron.pitch = -plane.getRollInput() / 4;
     }
 
     @Override
