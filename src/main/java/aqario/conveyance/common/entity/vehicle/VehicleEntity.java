@@ -8,7 +8,7 @@ import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
 import net.minecraft.world.World;
 
-public class VehicleEntity extends Entity {
+public abstract class VehicleEntity extends Entity {
     public VehicleEntity(EntityType<? extends VehicleEntity> type, World world) {
         super(type, world);
     }
