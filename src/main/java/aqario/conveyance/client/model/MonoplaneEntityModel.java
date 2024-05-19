@@ -84,11 +84,11 @@ public class MonoplaneEntityModel extends EntityModel<MonoplaneEntity> {
     @Override
     public void setAngles(MonoplaneEntity plane, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
         this.propeller.roll -= 2.432F;
-        this.elevator.pitch = -plane.getPitchInput() / 5;
+        this.elevator.pitch = -plane.getPitchInput() / 6;
         this.rudder.yaw = -plane.getYawInput() / 2;
         this.backWheel.yaw = -plane.getYawVelocity() / 2;
-        this.leftAileron.pitch = plane.getRollInput() / 4;
-        this.rightAileron.pitch = -plane.getRollInput() / 4;
+        this.leftAileron.pitch = -plane.getRollInput() / 8;
+        this.rightAileron.pitch = plane.getRollInput() / 8;
     }
 
     @Override
