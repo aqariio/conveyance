@@ -4,6 +4,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.MovementType;
 import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -13,7 +14,6 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
 
 public class BiplaneEntity extends VehicleEntity {
     private static final float GRAVITATIONAL_CONSTANT = -0.04F;
@@ -42,7 +42,7 @@ public class BiplaneEntity extends VehicleEntity {
 
     public BiplaneEntity(EntityType<? extends BiplaneEntity> type, World world) {
         super(type, world);
-        this.stepHeight = 0.55f;
+        this.setStepHeight(0.55f);
     }
 
 
@@ -82,10 +82,9 @@ public class BiplaneEntity extends VehicleEntity {
         return 0.8F;
     }
 
-    @Nullable
     @Override
-    public Entity getPrimaryPassenger() {
-        return this.getFirstPassenger();
+    public LivingEntity getPrimaryPassenger() {
+        return (LivingEntity) this.getFirstPassenger();
     }
 
     @Override
@@ -103,7 +102,7 @@ public class BiplaneEntity extends VehicleEntity {
     }
 
     @Override
-    public void updatePassengerPosition(Entity passenger) {
+    public void updatePassengerPosition(Entity passenger, PositionUpdater positionUpdater) {
         if (!this.hasPassenger(passenger)) {
             return;
         }
@@ -146,7 +145,7 @@ public class BiplaneEntity extends VehicleEntity {
             return ActionResult.SUCCESS;
         }
         else {
-            if (!this.world.isClient) {
+            if (!this.getWorld().isClient) {
                 return player.startRiding(this) ? ActionResult.CONSUME : ActionResult.PASS;
             }
             else {
@@ -167,7 +166,7 @@ public class BiplaneEntity extends VehicleEntity {
 
     @Override
     public void tick() {
-        if (world.isClient() && !getPassengerList().isEmpty()) {
+        if (this.getWorld().isClient() && !getPassengerList().isEmpty()) {
             Entity pilot = getPassengerList().get(0);
             MinecraftClient client = MinecraftClient.getInstance();
             if (pilot instanceof ClientPlayerEntity) {
@@ -192,7 +191,7 @@ public class BiplaneEntity extends VehicleEntity {
         lerpTick();
         if (this.isLogicalSideForUpdatingMovement()) {
             updateVelocity();
-            if (this.world.isClient) {
+            if (this.getWorld().isClient) {
                 updateController();
             }
             move(MovementType.SELF, getVelocity());

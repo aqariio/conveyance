@@ -1,5 +1,6 @@
 package aqario.conveyance.common.entity.vehicle;
 
+import aqario.conveyance.common.entity.damage.ConveyanceDamageTypes;
 import aqario.conveyance.common.entity.part.MonoplaneMultipartEntity;
 import aqario.conveyance.common.entity.part.MonoplanePart;
 import net.minecraft.block.BlockState;
@@ -10,13 +11,14 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.MovementType;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
 import net.minecraft.predicate.entity.EntityPredicates;
+import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.tag.FluidTags;
 import net.minecraft.text.Text;
 import net.minecraft.util.Util;
 import net.minecraft.util.function.BooleanBiFunction;
@@ -134,10 +136,9 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
         return 0.6;
     }
 
-    @Nullable
     @Override
-    public Entity getPrimaryPassenger() {
-        return this.getFirstPassenger();
+    public LivingEntity getPrimaryPassenger() {
+        return (LivingEntity) this.getFirstPassenger();
     }
 
     @Override
@@ -146,7 +147,7 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
     }
 
     @Override
-    public void updatePassengerPosition(Entity passenger) {
+    public void updatePassengerPosition(Entity passenger, PositionUpdater positionUpdater) {
         if (!this.hasPassenger(passenger)) {
             return;
         }
@@ -154,7 +155,7 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 
         int size = getPassengerList().size() - 1;
         Vec3d vec3d = new Vec3d(this.getMountedXOffset(), 0.0, 0.0).rotateY(-this.getYaw() * (float) (Math.PI / 180.0) - (float) (Math.PI / 2));
-        passenger.setPosition(this.getX() + vec3d.x, this.getY() + (double) g, this.getZ() + vec3d.z);
+        positionUpdater.accept(passenger, this.getX() + vec3d.x, this.getY() + (double) g, this.getZ() + vec3d.z);
         passenger.setYaw(passenger.getYaw() + this.yawVelocity);
         passenger.setHeadYaw(passenger.getHeadYaw() + this.yawVelocity);
         this.copyEntityData(passenger);
@@ -214,7 +215,7 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
         }
 
         if (pitch < 0.0F && rot > 0.0) {
-            double m = j * (double)(-MathHelper.sin(pitch)) * 0.04;
+            double m = j * (double) (-MathHelper.sin(pitch)) * 0.04;
             velocity = velocity.add(-rotVec.x * m / rot, m * 3.2, -rotVec.z * m / rot);
         }
 
@@ -224,16 +225,16 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 
         this.setVelocity(velocity.multiply(0.995F, 0.995F, 0.995F));
         this.move(MovementType.SELF, this.getVelocity());
-        if ((this.horizontalCollision || this.verticalCollision) && !this.world.isClient) {
+        if ((this.horizontalCollision || this.verticalCollision) && !this.getWorld().isClient) {
             double m = this.getVelocity().length();
             double n = j - m;
-            float o = (float)(n * 10.0 - 3.0);
+            float o = (float) (n * 10.0 - 3.0);
             if (o > 0.0F) {
-                this.damage(DamageSource.FLY_INTO_WALL, o);
+                this.damage(this.getDamageSources().flyIntoWall(), o);
             }
         }
 
-        if (this.onGround && !this.world.isClient) {
+        if (this.isOnGround() && !this.getWorld().isClient) {
             this.setFlag(Entity.FALL_FLYING_FLAG_INDEX, false);
         }
     }
@@ -254,11 +255,11 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 //			++this.ticksUnderwater;
 //		}
 //
-//		if (!this.world.isClient && this.ticksUnderwater >= 60.0F) {
+//		if (!this.getWorld().isClient && this.ticksUnderwater >= 60.0F) {
 //			this.removeAllPassengers();
 //		}
 
-        if (world.isClient() && !getPassengerList().isEmpty()) {
+        if (this.getWorld().isClient() && !getPassengerList().isEmpty()) {
             Entity pilot = getPassengerList().get(0);
             MinecraftClient client = MinecraftClient.getInstance();
             if (pilot instanceof ClientPlayerEntity) {
@@ -291,12 +292,12 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
             this.tickMovement();
         }
         this.lerpTick();
-        if (this.getPrimaryPassenger() instanceof PlayerEntity player && this.world.isClient) {
+        if (this.getPrimaryPassenger() instanceof PlayerEntity player && this.getWorld().isClient) {
             player.sendMessage(Text.literal(this.isOnGround() ? "On ground" : "Flying").append(Text.literal(", Speed: ")).append(String.valueOf(new DecimalFormat("#").format(this.getVelocity().length() * 20 * 3.6))).append(" km/h"), true);
         }
         if (this.isLogicalSideForUpdatingMovement()) {
             this.updateVelocity();
-            if (this.world.isClient) {
+            if (this.getWorld().isClient) {
                 this.updateController();
             }
             this.move(MovementType.SELF, getVelocity());
@@ -331,7 +332,7 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
     }
 
     public void tickMovement() {
-//		if (!this.world.isClient) {
+//		if (!this.getWorld().isClient) {
 //			boolean collides = false;
 //			for (MonoplanePart part : this.parts) {
 //				if (part.wouldCollideWithBlocks(Vec3d.ZERO, getPitch(), getYaw(), 0.0F)) {
@@ -380,7 +381,7 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 //
 //		this.segmentCircularBuffer[this.latestSegment][0] = this.getYaw();
 //		this.segmentCircularBuffer[this.latestSegment][1] = this.getY();
-//		if (this.world.isClient) {
+//		if (this.getWorld().isClient) {
 //			if (this.bodyTrackingIncrements > 0) {
 //				double d = this.getX() + (this.serverX - this.getX()) / (double)this.bodyTrackingIncrements;
 //				double e = this.getY() + (this.serverY - this.getY()) / (double)this.bodyTrackingIncrements;
@@ -424,11 +425,11 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 //		this.movePart(this.rightWing,  x_ * -(4 - 1), 0.5, y_ * (4 + 1));
 //		this.movePart(this.leftWing, y * -3.5F, 0.5, x * -3.5F);
 
-        if (!this.world.isClient) {
-            this.damageLivingEntities(this.world.getOtherEntities(this, this.nose.getBoundingBox().expand(0.5), EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR), 5.0F);
+        if (!this.getWorld().isClient) {
+            this.damageLivingEntities(this.getWorld().getOtherEntities(this, this.nose.getBoundingBox().expand(0.5), EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR), 1.0F);
             if (this.getVelocity().length() > 0.25F) {
                 for (MonoplanePart part : this.parts) {
-                    this.damageLivingEntities(this.world.getOtherEntities(this, part.getBoundingBox().expand(0.5), EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR), MathHelper.ceil(MathHelper.clamp(this.getVelocity().length() * 2.0, 0.0, 2.147483647E9)));
+                    this.damageLivingEntities(this.getWorld().getOtherEntities(this, part.getBoundingBox().expand(0.5), EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR), MathHelper.ceil(MathHelper.clamp(this.getVelocity().length() * 2.0, 0.0, 2.147483647E9)));
                 }
             }
         }
@@ -465,7 +466,7 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
     private void damageLivingEntities(List<Entity> entities, float amount) {
         for (Entity entity : entities) {
             if (entity instanceof LivingEntity) {
-                entity.damage(DamageSource.thorns(this), amount);
+                entity.damage(ConveyanceDamageTypes.of(this.getWorld(), ConveyanceDamageTypes.PROPELLER, this, null), amount);
             }
         }
     }
@@ -555,7 +556,8 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
                 this.pitchVelocity = 0;
                 this.rollVelocity = 0;
                 this.yawVelocity *= (float) Math.min(2, planeVelocity / 0.1);
-            } else {
+            }
+            else {
                 this.yawInput = 0;
             }
             this.setPitch(this.getPitch() + this.pitchVelocity);
@@ -578,7 +580,8 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
             this.velocityDecay = 0.9999F;
             this.setPitch((getPitch() + 11.0F) * 0.9F - 11.0F);
             this.setRoll(0.0F);
-        } else {
+        }
+        else {
             this.velocityDecay = 0.999F;
             this.addGlidingEffects();
         }
@@ -612,7 +615,7 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
     @Override
     public boolean damage(DamageSource source, float amount) {
         this.playSound(SoundEvents.ENTITY_IRON_GOLEM_HURT, 1.0F, 1.0F);
-        if (this.hasPassengers() && source.equals(DamageSource.FLY_INTO_WALL)) {
+        if (this.hasPassengers() && source.isType(DamageTypes.FLY_INTO_WALL)) {
             for (Entity entity : this.getPassengerList()) {
                 entity.damage(source, amount);
             }
@@ -667,9 +670,9 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
                     for (int s = k; s < l; ++s) {
                         if (r <= 0 || s != k && s != l - 1) {
                             mutable.set(p, s, q);
-                            BlockState blockState = this.world.getBlockState(mutable);
+                            BlockState blockState = this.getWorld().getBlockState(mutable);
                             if (VoxelShapes.matchesAnywhere(
-                                blockState.getCollisionShape(this.world, mutable).offset(p, s, q), voxelShape, BooleanBiFunction.AND
+                                blockState.getCollisionShape(this.getWorld(), mutable).offset(p, s, q), voxelShape, BooleanBiFunction.AND
                             )) {
                                 f += blockState.getBlock().getSlipperiness();
                                 ++o;
@@ -699,9 +702,9 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
             for (int p = k; p < l; ++p) {
                 for (int q = m; q < n; ++q) {
                     mutable.set(o, p, q);
-                    FluidState fluidState = this.world.getFluidState(mutable);
+                    FluidState fluidState = this.getWorld().getFluidState(mutable);
                     if (fluidState.isIn(FluidTags.WATER)) {
-                        float f = (float) p + fluidState.getHeight(this.world, mutable);
+                        float f = (float) p + fluidState.getHeight(this.getWorld(), mutable);
                         this.waterLevel = Math.max(f, this.waterLevel);
                         bl |= box.minY < (double) f;
                     }
@@ -729,8 +732,8 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
             for (int p = k; p < l; ++p) {
                 for (int q = m; q < n; ++q) {
                     mutable.set(o, p, q);
-                    FluidState fluidState = this.world.getFluidState(mutable);
-                    if (fluidState.isIn(FluidTags.WATER) && d < (double) ((float) mutable.getY() + fluidState.getHeight(this.world, mutable))) {
+                    FluidState fluidState = this.getWorld().getFluidState(mutable);
+                    if (fluidState.isIn(FluidTags.WATER) && d < (double) ((float) mutable.getY() + fluidState.getHeight(this.getWorld(), mutable))) {
                         if (!fluidState.isSource()) {
                             return MonoplaneEntity.Location.UNDER_FLOWING_WATER;
                         }
@@ -760,7 +763,8 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
     public void setRoll(float roll) {
         if (!Float.isFinite(roll)) {
             Util.logAndPause("Invalid entity rotation: " + roll + ", discarding.");
-        } else {
+        }
+        else {
             this.roll = roll;
         }
     }

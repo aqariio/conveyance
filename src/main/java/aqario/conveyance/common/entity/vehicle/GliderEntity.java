@@ -6,7 +6,6 @@ import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.Packet;
 import net.minecraft.world.World;
 
 public class GliderEntity extends Entity {
@@ -29,10 +28,5 @@ public class GliderEntity extends Entity {
 
     @Override
     protected void writeCustomDataToNbt(NbtCompound nbt) {
-    }
-
-    @Override
-    public Packet<?> createSpawnPacket() {
-        return null;
     }
 }

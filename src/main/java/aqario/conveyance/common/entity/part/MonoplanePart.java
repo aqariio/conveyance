@@ -8,7 +8,12 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
-import net.minecraft.util.math.*;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.joml.Vector3fc;
 import org.quiltmc.qsl.entity.multipart.api.AbstractEntityPart;
 
 public class MonoplanePart extends AbstractEntityPart<MonoplaneEntity> implements MonoplaneEntityPart {
@@ -29,19 +34,19 @@ public class MonoplanePart extends AbstractEntityPart<MonoplaneEntity> implement
     }
 
     public boolean wouldCollideWithBlocks(Vec3d velocity, float pitch, float yaw, float roll) {
-        Vec3f relativePos = new Vec3f(getAbsolutePosition().subtract(getAbsolutePivot()));
-        relativePos.rotate(new Quaternion(-pitch, -yaw, -roll, true));
-        Vec3d transformedPos = getAbsolutePivot().subtract(getAbsolutePosition()).add(relativePos.getX(), relativePos.getY(), relativePos.getZ());
+        Vector3f relativePos = new Vector3f((Vector3fc) getAbsolutePosition().subtract(getAbsolutePivot()));
+        relativePos.rotate(new Quaternionf(-pitch, -yaw, -roll, 0));
+        Vec3d transformedPos = getAbsolutePivot().subtract(getAbsolutePosition()).add(relativePos.x(), relativePos.y(), relativePos.z());
         Box box = this.getDimensions(this.getPose()).getBoxAt(getAbsolutePosition().add(transformedPos));
-        BlockPos blockPos = new BlockPos(box.minX + velocity.getX() + 0.001D, box.minY + velocity.getY() + 0.001D, box.minZ + velocity.getZ() + 0.001D);
-        BlockPos blockPos2 = new BlockPos(box.maxX + velocity.getX() - 0.001D, box.maxY + velocity.getY() - 0.001D, box.maxZ + velocity.getZ() - 0.001D);
-        if (this.world.isRegionLoaded(blockPos, blockPos2)) {
+        BlockPos blockPos = new BlockPos((int) (box.minX + velocity.getX() + 0.001D), (int) (box.minY + velocity.getY() + 0.001D), (int) (box.minZ + velocity.getZ() + 0.001D));
+        BlockPos blockPos2 = new BlockPos((int) (box.maxX + velocity.getX() - 0.001D), (int) (box.maxY + velocity.getY() - 0.001D), (int) (box.maxZ + velocity.getZ() - 0.001D));
+        if (this.getWorld().isRegionLoaded(blockPos, blockPos2)) {
             BlockPos.Mutable mutable = new BlockPos.Mutable();
             for (int i = blockPos.getX(); i <= blockPos2.getX(); i++) {
                 for (int j = blockPos.getY(); j <= blockPos2.getY(); j++) {
                     for (int k = blockPos.getZ(); k <= blockPos2.getZ(); k++) {
                         mutable.set(i, j, k);
-                        if (!this.world.getBlockState(mutable).getCollisionShape(this.world, mutable).isEmpty()) {
+                        if (!this.getWorld().getBlockState(mutable).getCollisionShape(this.getWorld(), mutable).isEmpty()) {
                             return true;
                         }
                     }
@@ -63,7 +68,7 @@ public class MonoplanePart extends AbstractEntityPart<MonoplaneEntity> implement
 
     @Override
     public ActionResult interact(PlayerEntity player, Hand hand) {
-        if (!this.world.isClient) {
+        if (!this.getWorld().isClient) {
             if (player.getMainHandStack().isEmpty() && player.isSneaking()) {
                 if (!(player.getAbilities()).creativeMode) {
                     player.setStackInHand(hand, ConveyanceItems.MONOPLANE.getDefaultStack());

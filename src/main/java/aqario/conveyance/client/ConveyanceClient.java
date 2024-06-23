@@ -17,15 +17,16 @@ import org.quiltmc.qsl.base.api.entrypoint.client.ClientModInitializer;
 
 public class ConveyanceClient implements ClientModInitializer {
     public static final EntityModelLayer GALLEON = new EntityModelLayer(new Identifier(Conveyance.ID, "galleon"), "main");
-	public static final EntityModelLayer MONOPLANE = new EntityModelLayer(new Identifier(Conveyance.ID, "monoplane"), "main");
-	public static final EntityModelLayer BIPLANE = new EntityModelLayer(new Identifier(Conveyance.ID, "biplane"), "main");
+    public static final EntityModelLayer MONOPLANE = new EntityModelLayer(new Identifier(Conveyance.ID, "monoplane"), "main");
+    public static final EntityModelLayer BIPLANE = new EntityModelLayer(new Identifier(Conveyance.ID, "biplane"), "main");
+
     @Override
     public void onInitializeClient(ModContainer mod) {
         EntityRendererRegistry.register(ConveyanceEntityType.GALLEON, GalleonEntityRenderer::new);
-		EntityModelLayerRegistry.registerModelLayer(GALLEON, GalleonEntityModel::getTexturedModelData);
-		EntityRendererRegistry.register(ConveyanceEntityType.MONOPLANE, MonoplaneEntityRenderer::new);
-		EntityModelLayerRegistry.registerModelLayer(MONOPLANE, MonoplaneEntityModel::getTexturedModelData);
-		EntityRendererRegistry.register(ConveyanceEntityType.BIPLANE, BiplaneEntityRenderer::new);
-		EntityModelLayerRegistry.registerModelLayer(BIPLANE, BiplaneEntityModel::getTexturedModelData);
+        EntityModelLayerRegistry.registerModelLayer(GALLEON, GalleonEntityModel::getTexturedModelData);
+        EntityRendererRegistry.register(ConveyanceEntityType.MONOPLANE, MonoplaneEntityRenderer::new);
+        EntityModelLayerRegistry.registerModelLayer(MONOPLANE, MonoplaneEntityModel::getTexturedModelData);
+        EntityRendererRegistry.register(ConveyanceEntityType.BIPLANE, BiplaneEntityRenderer::new);
+        EntityModelLayerRegistry.registerModelLayer(BIPLANE, BiplaneEntityModel::getTexturedModelData);
     }
 }

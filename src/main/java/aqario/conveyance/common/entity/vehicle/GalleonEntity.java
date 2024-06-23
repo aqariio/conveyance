@@ -6,13 +6,13 @@ import aqario.conveyance.common.world.dimension.ConveyanceDimensions;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.TeleportTarget;
 import net.minecraft.world.World;
 import org.quiltmc.qsl.worldgen.dimension.api.QuiltDimensions;
@@ -81,8 +81,8 @@ public class GalleonEntity extends VehicleEntity {
     }
 
     private void sendPlayerToCabin(PlayerEntity player) {
-        if (!world.isClient && !(world.getRegistryKey() == ConveyanceDimensions.GALLEON)) {
-            MinecraftServer minecraftServer = ((ServerWorld) world).getServer();
+        if (!this.getWorld().isClient && !(this.getWorld().getRegistryKey() == ConveyanceDimensions.GALLEON)) {
+            MinecraftServer minecraftServer = ((ServerWorld) this.getWorld()).getServer();
             RegistryKey<World> registryKey = ConveyanceDimensions.GALLEON;
             ServerWorld serverWorld = minecraftServer.getWorld(registryKey);
             if (serverWorld != null) {

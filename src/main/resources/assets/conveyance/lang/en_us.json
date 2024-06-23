@@ -7,5 +7,6 @@
   "block.conveyance.oak_beam": "Oak Beam",
   "entity.conveyance.galleon": "Galleon",
   "entity.conveyance.monoplane": "Monoplane",
-  "entity.conveyance.galleon.fail": "The cabin cannot be entered"
+  "entity.conveyance.galleon.fail": "Unable to enter cabin",
+  "death.attack.propeller": "%1$s was blended by a spinning propeller"
 }

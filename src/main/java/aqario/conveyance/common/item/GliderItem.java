@@ -43,7 +43,9 @@ public class GliderItem extends Item {
             Vec3d vec3d2 = user.getEyePos();
             for (Entity entity : list) {
                 Box box = entity.getBoundingBox().expand(entity.getTargetingMargin());
-                if (!box.contains(vec3d2)) continue;
+                if (!box.contains(vec3d2)) {
+                    continue;
+                }
                 return TypedActionResult.pass(itemStack);
             }
         }
@@ -55,7 +57,7 @@ public class GliderItem extends Item {
             }
             if (!world.isClient) {
                 world.spawnEntity(boatEntity);
-                world.emitGameEvent(user, GameEvent.ENTITY_PLACE, new BlockPos(hitResult.getPos()));
+                world.emitGameEvent(user, GameEvent.ENTITY_PLACE, new BlockPos(hitResult.getBlockPos()));
                 if (!user.getAbilities().creativeMode) {
                     itemStack.decrement(1);
                 }

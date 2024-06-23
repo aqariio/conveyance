@@ -1,35 +1,37 @@
 plugins {
 	id 'maven-publish'
-	alias libs.plugins.quilt.loom
+	id 'org.quiltmc.loom' version '1.+'
 }
 
 archivesBaseName = project.archives_base_name
-version = "${project.version}+${libs.versions.minecraft.get()}"
+version = "${project.version}+${project.minecraft_version}"
 group = project.maven_group
 
 repositories {
-//	maven { url 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/' }
+	maven {
+		url = "https://maven.terraformersmc.com/releases/"
+	}
 }
 
 // All the dependencies are declared at gradle/libs.version.toml and referenced with "libs.<id>"
 // See https://docs.gradle.org/current/userguide/platforms.html for information on how version catalogs work.
 dependencies {
-	minecraft libs.minecraft
-	mappings variantOf(libs.quilt.mappings) { classifier 'intermediary-v2' }
-	// Replace the above line with the block below if you want to use Mojang mappings as your primary mappings, falling back on QM for parameters and Javadocs
-	/*
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+//	mappings "org.quiltmc:quilt-mappings:${project.minecraft_version}+build.${project.quilt_mappings}:intermediary-v2"
 	mappings loom.layered {
-		mappings "org.quiltmc:quilt-mappings:${libs.versions.quilt.mappings.get()}:intermediary-v2"
-		officialMojangMappings()
+		mappings "net.fabricmc:yarn:${project.minecraft_version}+build.${project.yarn_mappings}:v2"
+		mappings "org.quiltmc:quilt-mappings:${project.minecraft_version}+build.${project.quilt_mappings}:intermediary-v2"
 	}
-	*/
-	modImplementation libs.quilt.loader
+	modImplementation "org.quiltmc:quilt-loader:${project.loader_version}"
 
 	// QSL is not a complete API; You will need Quilted Fabric API to fill in the gaps.
 	// Quilted Fabric API will automatically pull in the correct QSL version.
-	modImplementation libs.quilted.fabric.api
-	// modImplementation libs.bundles.quilted.fabric.api // If you wish to use Fabric API's deprecated modules, you can replace the above line with this one
-//	modImplementation 'software.bernie.geckolib:geckolib-quilt-1.19:3.1.39'
+	modImplementation "org.quiltmc.quilted-fabric-api:quilted-fabric-api:${project.quilted_fabric_api_version}-${project.minecraft_version}"
+
+	// Mod Menu
+	modRuntimeOnly("com.terraformersmc:modmenu:${project.modmenu_version}") {
+		transitive = false
+	}
 }
 
 processResources {

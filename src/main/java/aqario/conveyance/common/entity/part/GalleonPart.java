@@ -6,7 +6,8 @@ import net.minecraft.entity.EntityDimensions;
 import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.Packet;
+import net.minecraft.network.listener.ClientPlayPacketListener;
+import net.minecraft.network.packet.Packet;
 
 public class GalleonPart extends Entity implements GalleonEntityPart {
     public final GalleonEntity owner;
@@ -14,7 +15,7 @@ public class GalleonPart extends Entity implements GalleonEntityPart {
     private final EntityDimensions partDimensions;
 
     public GalleonPart(GalleonEntity owner, String name, float width, float height) {
-        super(owner.getType(), owner.world);
+        super(owner.getType(), owner.getWorld());
         this.partDimensions = EntityDimensions.changing(width, height);
         this.calculateDimensions();
         this.owner = owner;
@@ -49,7 +50,7 @@ public class GalleonPart extends Entity implements GalleonEntityPart {
     }
 
     @Override
-    public Packet<?> createSpawnPacket() {
+    public Packet<ClientPlayPacketListener> createSpawnPacket() {
         throw new UnsupportedOperationException();
     }
 

@@ -3,11 +3,11 @@ package aqario.conveyance.common.block;
 import aqario.conveyance.common.world.dimension.ConveyanceDimensions;
 import net.minecraft.block.*;
 import net.minecraft.block.enums.DoubleBlockHalf;
-import net.minecraft.block.piston.PistonBehavior;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.StateManager;
@@ -21,7 +21,6 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.*;
 import org.jetbrains.annotations.Nullable;
@@ -122,11 +121,6 @@ public class CabinDoorBlock extends Block {
             return blockState.isSideSolidFullSquare(world, blockPos, Direction.UP);
         }
         return blockState.isOf(this);
-    }
-
-    @Override
-    public PistonBehavior getPistonBehavior(BlockState state) {
-        return PistonBehavior.BLOCK;
     }
 
     @Override
