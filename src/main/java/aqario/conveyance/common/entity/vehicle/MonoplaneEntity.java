@@ -129,7 +129,7 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 
     @Override
     public double getMountedHeightOffset() {
-        return 1.0;
+        return 1.1;
     }
 
     public double getMountedXOffset() {
@@ -158,7 +158,8 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
         positionUpdater.accept(passenger, this.getX() + vec3d.x, this.getY() + (double) g, this.getZ() + vec3d.z);
         passenger.setYaw(passenger.getYaw() + this.yawVelocity);
         passenger.setHeadYaw(passenger.getHeadYaw() + this.yawVelocity);
-        this.copyEntityData(passenger);
+        passenger.setPitch(passenger.getPitch() + this.pitchVelocity);
+        this.clampEntityYaw(passenger);
         if (passenger instanceof AnimalEntity && size > 1) {
             int angle = passenger.getId() % 2 == 0 ? 90 : 270;
             passenger.setBodyYaw(((AnimalEntity) passenger).bodyYaw + (float) angle);
@@ -168,16 +169,21 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 
     @Override
     public void onPassengerLookAround(Entity passenger) {
-        this.copyEntityData(passenger);
+        this.clampEntityYaw(passenger);
     }
 
-    protected void copyEntityData(Entity entity) {
+    protected void clampEntityYaw(Entity entity) {
         entity.setBodyYaw(this.getYaw());
         float f = MathHelper.wrapDegrees(entity.getYaw() - this.getYaw());
         float g = MathHelper.clamp(f, -105.0F, 105.0F);
         entity.prevYaw += g - f;
         entity.setYaw(entity.getYaw() + g - f);
         entity.setHeadYaw(entity.getYaw());
+    }
+
+    @Override
+    public Vec3d updatePassengerForDismount(LivingEntity passenger) {
+        return new Vec3d(this.getX(), this.cockpit.getBoundingBox().maxY + 0.1, this.getZ());
     }
 
     private float wrapYawChange(double yawDegrees) {
@@ -286,6 +292,30 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
                     client.options.sprintKey.isPressed()
                 );
             }
+
+            while (this.getPitch() - this.prevPitch < -180.0F) {
+                this.prevPitch -= 360.0F;
+            }
+
+            while (this.getPitch() - this.prevPitch >= 180.0F) {
+                this.prevPitch += 360.0F;
+            }
+
+            while (this.getYaw() - this.prevYaw < -180.0F) {
+                this.prevYaw -= 360.0F;
+            }
+
+            while (this.getYaw() - this.prevYaw >= 180.0F) {
+                this.prevYaw += 360.0F;
+            }
+
+            while (this.getRoll() - this.prevRoll < -180.0F) {
+                this.prevRoll -= 360.0F;
+            }
+
+            while (this.getRoll() - this.prevRoll >= 180.0F) {
+                this.prevRoll += 360.0F;
+            }
         }
         super.tick();
         if (!this.isRemoved()) {
@@ -293,7 +323,15 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
         }
         this.lerpTick();
         if (this.getPrimaryPassenger() instanceof PlayerEntity player && this.getWorld().isClient) {
-            player.sendMessage(Text.literal(this.isOnGround() ? "On ground" : "Flying").append(Text.literal(", Speed: ")).append(String.valueOf(new DecimalFormat("#").format(this.getVelocity().length() * 20 * 3.6))).append(" km/h"), true);
+            // Flight Data
+            player.sendMessage(
+                Text.literal(this.isOnGround() ? "On ground" : "Flying")
+                    .append(", Speed: " + new DecimalFormat("#").format(this.getVelocity().length() * 72) + " km/h, ")
+                    .append("Pitch: " + new DecimalFormat("#").format(this.getPitch()) + "\u00B0 ")
+                    .append("Yaw: " + new DecimalFormat("#").format(this.getYaw()) + "\u00B0 ")
+                    .append("Roll: " + new DecimalFormat("#").format(this.getRoll()) + "\u00B0"),
+                true
+            );
         }
         if (this.isLogicalSideForUpdatingMovement()) {
             this.updateVelocity();
@@ -426,7 +464,7 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 //		this.movePart(this.leftWing, y * -3.5F, 0.5, x * -3.5F);
 
         if (!this.getWorld().isClient) {
-            this.damageLivingEntities(this.getWorld().getOtherEntities(this, this.nose.getBoundingBox().expand(0.5), EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR), 1.0F);
+            this.damageLivingEntities(this.getWorld().getOtherEntities(this, this.nose.getBoundingBox().expand(0.5), EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR), 2.0F);
             if (this.getVelocity().length() > 0.25F) {
                 for (MonoplanePart part : this.parts) {
                     this.damageLivingEntities(this.getWorld().getOtherEntities(this, part.getBoundingBox().expand(0.5), EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR), MathHelper.ceil(MathHelper.clamp(this.getVelocity().length() * 2.0, 0.0, 2.147483647E9)));
@@ -443,7 +481,7 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 //		}
 
         for (MonoplanePart part : this.parts) {
-            this.rotatePart(part, (float) (-getPitch() * Math.PI / 180.0F), (float) (-getYaw() * Math.PI / 180.0F));
+            this.rotatePart(part, (float) (-getPitch() * Math.PI / 180.0F), (float) (-getYaw() * Math.PI / 180.0F), (float) (-getRoll() * Math.PI / 180.0F));
         }
 
         for (int ac = 0; ac < this.parts.length; ++ac) {
@@ -456,9 +494,9 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
         }
     }
 
-    public void rotatePart(MonoplanePart part, float x, float y) {
+    public void rotatePart(MonoplanePart part, float x, float y, float z) {
         Vec3d difference = part.getAbsolutePosition().subtract(part.getAbsolutePivot());
-        difference = difference.rotateX(x).rotateY(y);
+        difference = difference.rotateZ(z).rotateX(x).rotateY(y);
         Vec3d transformedPos = part.getAbsolutePivot().subtract(part.getAbsolutePosition()).add(difference);
         part.move(transformedPos);
     }
@@ -491,25 +529,30 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
             float velocity = 0.0F;
 
             if (this.pressingLeft) {
-                this.yawInput -= 0.1F;
-                this.rollInput -= 1F;
+                if (this.isOnGround()) {
+                    this.yawInput -= 0.1F;
+                }
+                this.rollInput -= 1.0F;
             }
 
             if (this.pressingRight) {
-                this.yawInput += 0.1F;
-                this.rollInput += 1F;
+                if (this.isOnGround()) {
+                    this.yawInput += 0.1F;
+                }
+                this.rollInput += 1.0F;
             }
 
             if (this.pressingBack) {
-                this.pitchInput -= 0.5F;
+                this.yawInput += 0.3F * this.roll / 90;
+                this.pitchInput -= 0.4F * (90 - Math.abs(this.roll)) / 90;
             }
 
             if (this.pressingForward) {
-                this.pitchInput += 0.5F;
+                this.pitchInput += 0.4F;
             }
 
             if (this.pressingEngineUp) {
-                velocity += 0.005F;
+                velocity += this.isOnGround() ? 0.005F : 0.015F;
             }
 
             if (this.pressingEngineDown) {
@@ -544,13 +587,18 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 
             this.pitchInput = MathHelper.clamp(this.pitchInput, -2F, 2F);
             this.yawInput = MathHelper.clamp(this.yawInput, -0.5F, 0.5F);
-            this.rollInput = MathHelper.clamp(this.rollInput, -4F, 4F);
+            this.rollInput = MathHelper.clamp(this.rollInput, -55F, 55F);
 
             this.pitchVelocity = this.pitchInput;
             this.rollVelocity = this.rollInput;
-            if (this.isOnGround()) {
+//            if (this.isOnGround()) {
                 this.yawVelocity = this.yawInput;
+//            }
+
+            if (this.getPitch() < 90.0F){
+                this.pitchVelocity += 0.01F * (Math.abs(this.getRoll()) / 4);
             }
+            this.yawVelocity += MathHelper.clamp(0.02F * (this.getRoll() / 3), -0.5F, 0.5F);
 
             if (this.isOnGround()) {
                 this.pitchVelocity = 0;
@@ -558,11 +606,11 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
                 this.yawVelocity *= (float) Math.min(2, planeVelocity / 0.1);
             }
             else {
-                this.yawInput = 0;
+//                this.yawInput = 0;
             }
-            this.setPitch(this.getPitch() + this.pitchVelocity);
-            this.setYaw(this.getYaw() + this.yawVelocity);
-            this.setRoll(this.getRoll() + this.rollVelocity);
+            this.setPitch(MathHelper.wrapDegrees(this.getPitch() + this.pitchVelocity));
+            this.setYaw(MathHelper.wrapDegrees(this.getYaw() + this.yawVelocity));
+            this.setRoll(MathHelper.wrapDegrees(this.getRoll() + this.rollVelocity));
 
 
             this.setVelocity(
@@ -587,7 +635,7 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
         }
         float pitchVelocityDecay = 0.9F;
         float yawVelocityDecay = 0.985F;
-        float rollVelocityDecay = 0.85F;
+        float rollVelocityDecay = 0.6F;
         Vec3d vec3d = this.getVelocity();
         this.setVelocity(vec3d.x * this.velocityDecay, vec3d.y + gravity/* + Math.min(lift, 0.040001F)*/, vec3d.z * this.velocityDecay);
         if (this.getVelocity().horizontalLength() > this.getTakeoffSpeed()) {
@@ -620,7 +668,8 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
                 entity.damage(source, amount);
             }
         }
-        return super.damage(source, amount);
+        this.isInvulnerableTo(source);
+        return false;
     }
 
     @Override
@@ -756,10 +805,6 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 //		monoplanePart.move(MovementType.SELF, new Vec3d(dx, dy, dz));
     }
 
-    public float getRoll(float tickDelta) {
-        return tickDelta == 1.0F ? this.getRoll() : MathHelper.lerp(tickDelta, this.prevRoll, this.getRoll());
-    }
-
     public void setRoll(float roll) {
         if (!Float.isFinite(roll)) {
             Util.logAndPause("Invalid entity rotation: " + roll + ", discarding.");
@@ -767,6 +812,10 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
         else {
             this.roll = roll;
         }
+    }
+
+    public float getRoll(float tickDelta) {
+        return tickDelta == 1.0F ? this.getRoll() : MathHelper.lerp(tickDelta, this.prevRoll, this.getRoll());
     }
 
     public float getRoll() {

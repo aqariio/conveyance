@@ -1,13 +1,15 @@
 {
-	"required": true,
-	"minVersion": "0.8",
-	"package": "aqario.conveyance.mixin",
-	"compatibilityLevel": "JAVA_17",
-	"mixins": [],
-	"client": [
-    "client.CameraMixin"
+  "required": true,
+  "minVersion": "0.8",
+  "package": "aqario.conveyance.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [],
+  "client": [
+    "client.CameraMixin",
+    "client.GameRendererMixin",
+    "client.LivingEntityRendererMixin"
   ],
-	"injectors": {
-		"defaultRequire": 1
+  "injectors": {
+    "defaultRequire": 1
 	}
 }
