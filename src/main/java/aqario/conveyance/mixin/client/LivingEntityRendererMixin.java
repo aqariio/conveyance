@@ -1,6 +1,7 @@
 package aqario.conveyance.mixin.client;
 
 import aqario.conveyance.common.entity.vehicle.MonoplaneEntity;
+import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.LivingEntityRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.LivingEntity;
@@ -18,5 +19,10 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
             matrices.multiply(Axis.X_POSITIVE.rotationDegrees(-plane.getPitch(tickDelta)));
             matrices.multiply(Axis.Z_POSITIVE.rotationDegrees(-plane.getRoll(tickDelta)));
         }
+    }
+
+    @Inject(method = "render(Lnet/minecraft/entity/LivingEntity;FFLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;I)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/math/MathHelper;lerpAngleDegrees(FFF)F", ordinal = 1, shift = At.Shift.AFTER))
+    public void conveyance$lerpPitch(T livingEntity, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i, CallbackInfo ci) {
+
     }
 }

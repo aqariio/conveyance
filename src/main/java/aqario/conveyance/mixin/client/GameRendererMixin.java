@@ -1,6 +1,8 @@
 package aqario.conveyance.mixin.client;
 
+import aqario.conveyance.client.renderer.PlaneCamera;
 import aqario.conveyance.common.entity.vehicle.MonoplaneEntity;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.util.math.MatrixStack;
@@ -21,13 +23,23 @@ public class GameRendererMixin {
     @Final
     private Camera camera;
 
-    @Inject(method = "renderWorld", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/Camera;update(Lnet/minecraft/world/BlockView;Lnet/minecraft/entity/Entity;ZZF)V", shift = At.Shift.AFTER))
+    @Shadow @Final
+    MinecraftClient client;
+
+    @Inject(
+        method = "renderWorld",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/util/math/Axis;rotationDegrees(F)Lorg/joml/Quaternionf;",
+            ordinal = 2
+        )
+    )
     public void conveyance$rotateCamera(float tickDelta, long limitTime, MatrixStack matrices, CallbackInfo ci) {
         Entity entity = camera.getFocusedEntity();
         if (entity != null && entity.getRootVehicle() instanceof MonoplaneEntity plane) {
             // rotate camera
-            matrices.multiply(Axis.Z_POSITIVE.rotationDegrees(plane.getRoll(tickDelta)));
-//            matrices.multiply(Axis.X_POSITIVE.rotationDegrees(plane.getPitch(tickDelta)));
+//            matrices.multiply(Axis.X_POSITIVE.rotationDegrees(((PlaneCamera) camera).conveyance$getPitch()));
+            matrices.multiply(Axis.Z_POSITIVE.rotationDegrees(((PlaneCamera) camera).conveyance$getRoll()));
 
             // eye offset
             float eye = entity.getStandingEyeHeight();
@@ -43,7 +55,9 @@ public class GameRendererMixin {
             // camera offset
             matrices.multiply(Axis.X_POSITIVE.rotationDegrees(camera.getPitch()));
             matrices.multiply(Axis.Y_POSITIVE.rotationDegrees(camera.getYaw() + 180.0f));
+            matrices.multiply(Axis.Z_POSITIVE.rotationDegrees(((PlaneCamera) camera).conveyance$getRoll()));
             matrices.translate(offset.x(), offset.y() + eye, offset.z());
+            matrices.multiply(Axis.Z_POSITIVE.rotationDegrees(-((PlaneCamera) camera).conveyance$getRoll()));
             matrices.multiply(Axis.Y_POSITIVE.rotationDegrees(-camera.getYaw() - 180.0f));
             matrices.multiply(Axis.X_POSITIVE.rotationDegrees(-camera.getPitch()));
         }
