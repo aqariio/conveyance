@@ -1,0 +1,8 @@
+{
+  "entity.monoplane.engine": {
+    "sounds": [
+      "conveyance:monoplane_engine"
+    ],
+    "subtitle": "subtitles.conveyance.entity.monoplane.engine"
+  }
+}

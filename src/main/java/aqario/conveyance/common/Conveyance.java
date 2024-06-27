@@ -1,5 +1,6 @@
 package aqario.conveyance.common;
 
+import aqario.conveyance.client.sound.ConveyanceSoundEvents;
 import aqario.conveyance.common.block.ConveyanceBlocks;
 import aqario.conveyance.common.entity.ConveyanceEntityType;
 import aqario.conveyance.common.item.ConveyanceItems;
@@ -19,6 +20,7 @@ public class Conveyance implements ModInitializer {
         ConveyanceBlocks.init();
         ConveyanceEntityType.init();
         ConveyanceItems.init();
+        ConveyanceSoundEvents.init();
         ConveyanceDimensions.init();
     }
 }

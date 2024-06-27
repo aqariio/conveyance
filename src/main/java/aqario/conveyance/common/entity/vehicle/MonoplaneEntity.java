@@ -36,10 +36,14 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
     private static final float GRAVITATIONAL_CONSTANT = -0.04F;
     private final MonoplanePart[] parts;
     public final MonoplanePart nose;
-    private final MonoplanePart engine;
+    public final MonoplanePart fuselage1;
+    public final MonoplanePart fuselage2;
+    public final MonoplanePart fuselage3;
+    private final MonoplanePart fuselage4;
     private final MonoplanePart cockpit;
-    private final MonoplanePart fuselage;
-    private final MonoplanePart tail;
+    private final MonoplanePart tail1;
+    private final MonoplanePart tail2;
+    private final MonoplanePart tail3;
     private final MonoplanePart rightWing;
     private final MonoplanePart leftWing;
     private boolean pressingLeft;
@@ -89,19 +93,27 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 
     public MonoplaneEntity(EntityType<? extends MonoplaneEntity> type, World world) {
         super(type, world);
-        this.nose = new MonoplanePart(this, 2.5F, 2.5F, new Vec3d(0.0D, 0.0D, 4.5D), new Vec3d(0.0D, 0.0D, 0.0D), MonoplanePart.ModuleType.PROPELLER);
-        this.engine = new MonoplanePart(this, 2.5F, 2.5F, new Vec3d(0.0D, 0.0D, 2.5D), new Vec3d(0.0D, 0.0D, 0.0D), MonoplanePart.ModuleType.COCKPIT);
-        this.cockpit = new MonoplanePart(this, 2.5F, 2.5F, new Vec3d(0.0D, 0.0D, 0.5D), new Vec3d(0.0D, 0.0D, 0.0D));
-        this.fuselage = new MonoplanePart(this, 2.0F, 2.0F, new Vec3d(0.0D, 0.25D, -1.5D), new Vec3d(0.0D, 0.0D, 0.0D));
-        this.tail = new MonoplanePart(this, 3.0F, 3.0F, new Vec3d(0.0D, 0.5D, -3.75D), new Vec3d(0.0D, 0.0D, 0.0D));
-        this.rightWing = new MonoplanePart(this, 4.0F, 0.5F, new Vec3d(-3.0D, 0.5D, 1.5D), new Vec3d(0.0D, 0.0D, 0.0D));
-        this.leftWing = new MonoplanePart(this, 4.0F, 0.5F, new Vec3d(3.0D, 0.5D, 1.5D), new Vec3d(0.0D, 0.0D, 0.0D));
+        this.nose = new MonoplanePart(this, 1.4F, 1.4F, new Vec3d(0.0, 0.8, 5.0), new Vec3d(0.0, 0.0, 0.0), MonoplanePart.ModuleType.PROPELLER);
+        this.fuselage1 = new MonoplanePart(this, 1.4F, 1.4F, new Vec3d(0.0, 0.8, 4.0), new Vec3d(0.0, 0.0, 0.0));
+        this.fuselage2 = new MonoplanePart(this, 1.4F, 1.4F, new Vec3d(0.0, 0.8, 3.0), new Vec3d(0.0, 0.0, 0.0));
+        this.fuselage3 = new MonoplanePart(this, 1.4F, 1.4F, new Vec3d(0.0, 0.8, 2.0), new Vec3d(0.0, 0.0, 0.0));
+        this.cockpit = new MonoplanePart(this, 1.8F, 1.8F, new Vec3d(0.0, 0.8, 1.0), new Vec3d(0.0, 0.0, 0.0), MonoplanePart.ModuleType.COCKPIT);
+        this.fuselage4 = new MonoplanePart(this, 1.4F, 1.4F, new Vec3d(0.0, 0.8, 0.5), new Vec3d(0.0, 0.0, 0.0));
+        this.tail1 = new MonoplanePart(this, 1.4F, 1.4F, new Vec3d(0.0, 1.2, -0.5), new Vec3d(0.0, 0.0, 0.0));
+        this.tail2 = new MonoplanePart(this, 1.4F, 1.4F, new Vec3d(0.0, 1.2, -1.5), new Vec3d(0.0, 0.0, 0.0));
+        this.tail3 = new MonoplanePart(this, 3.0F, 3.0F, new Vec3d(0.0, 0.75, -3.75), new Vec3d(0.0, 0.0, 0.0));
+        this.rightWing = new MonoplanePart(this, 4.0F, 0.5F, new Vec3d(-3.0, 0.5, 1.5), new Vec3d(0.0, 0.0, 0.0));
+        this.leftWing = new MonoplanePart(this, 4.0F, 0.5F, new Vec3d(3.0, 0.5, 1.5), new Vec3d(0.0, 0.0, 0.0));
         this.parts = new MonoplanePart[]{
             this.nose,
-            this.engine,
+            this.fuselage1,
+            this.fuselage2,
+            this.fuselage3,
+            this.fuselage4,
             this.cockpit,
-            this.fuselage,
-            this.tail,
+            this.tail1,
+            this.tail2,
+            this.tail3,
             this.rightWing,
             this.leftWing
         };
@@ -360,7 +372,7 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 //				}
 //			}
 //			if (collides) {
-//				setPosition(getPos().add(0.0D, 0.01D, 0.0D));
+//				setPosition(getPos().add(0.0, 0.01D, 0.0));
 //			}
 //		}
         Vec3d vec3d = this.getVelocity();
@@ -388,7 +400,7 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
         }
 
         if (!this.getWorld().isClient) {
-            this.damageLivingEntities(this.getWorld().getOtherEntities(this, this.nose.getBoundingBox().expand(0.5), EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR), 2.0F);
+            this.damageLivingEntities(this.getWorld().getOtherEntities(this, this.nose.getBoundingBox().expand(1.25), EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR), 2.0F);
             if (this.getVelocity().length() > 0.25F) {
                 for (MonoplanePart part : this.parts) {
                     this.damageLivingEntities(this.getWorld().getOtherEntities(this, part.getBoundingBox().expand(0.5), EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR), MathHelper.ceil(MathHelper.clamp(this.getVelocity().length() * 2.0, 0.0, 2.147483647E9)));
@@ -495,7 +507,7 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 
 //			for (MonoplanePart part : this.parts) {
 //				if (part.wouldCollideWithBlocks(getVelocity().add((MathHelper.sin(-getYaw() * 0.017453292F) * velocity), 0, (MathHelper.cos(getYaw() * 0.017453292F) * velocity)), 0.0F, getYaw() + this.yawVelocity, 0.0F)) {
-//					setVelocity(0.0D, 0.0D, 0.0D);
+//					setVelocity(0.0, 0.0, 0.0);
 //					this.yawVelocity = 0.0F;
 //					return;
 //				}
@@ -719,6 +731,10 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
     private void movePart(MonoplanePart monoplanePart, double dx, double dy, double dz) {
         monoplanePart.setPosition(this.getX() + dx, this.getY() + dy, this.getZ() + dz);
 //		monoplanePart.move(MovementType.SELF, new Vec3d(dx, dy, dz));
+    }
+
+    public float getEngineSpeed() {
+        return 1.0F;
     }
 
     public void setRoll(float roll) {

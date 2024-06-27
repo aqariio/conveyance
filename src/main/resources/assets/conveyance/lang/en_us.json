@@ -8,5 +8,6 @@
   "entity.conveyance.galleon": "Galleon",
   "entity.conveyance.monoplane": "Monoplane",
   "entity.conveyance.galleon.fail": "Unable to enter cabin",
-  "death.attack.propeller": "%1$s was blended by a spinning propeller"
+  "death.attack.propeller": "%1$s was blended by a spinning propeller",
+  "subtitles.conveyance.entity.monoplane.engine": "Propeller whirrs"
 }
