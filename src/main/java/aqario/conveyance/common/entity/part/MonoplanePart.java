@@ -20,17 +20,17 @@ public class MonoplanePart extends AbstractEntityPart<MonoplaneEntity> implement
     private final MonoplaneEntity owner;
     public ModuleType type;
 
-    public MonoplanePart(MonoplaneEntity owner, float width, float height, Vec3d relativePosition, Vec3d relativePivot) {
+    public MonoplanePart(MonoplaneEntity owner, float width, float height, Vec3d relativePosition, Vec3d relativePivot, ModuleType type) {
         super(owner, width, height);
         setRelativePosition(relativePosition);
         setPivot(relativePivot);
         this.calculateDimensions();
         this.owner = owner;
+        this.type = type;
     }
 
-    public MonoplanePart(MonoplaneEntity owner, float width, float height, Vec3d relativePosition, Vec3d relativePivot, ModuleType type) {
-        this(owner, width, height, relativePosition, relativePivot);
-        this.type = type;
+    public MonoplanePart(MonoplaneEntity owner, float width, float height, Vec3d relativePosition, Vec3d relativePivot) {
+        this(owner, width, height, relativePosition, relativePivot, null);
     }
 
     public boolean wouldCollideWithBlocks(Vec3d velocity, float pitch, float yaw, float roll) {

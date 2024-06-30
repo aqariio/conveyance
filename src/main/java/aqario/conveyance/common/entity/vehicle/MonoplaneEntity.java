@@ -15,6 +15,9 @@ import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
 import net.minecraft.predicate.entity.EntityPredicates;
 import net.minecraft.registry.tag.FluidTags;
@@ -67,8 +70,6 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
     public float prevBodyYaw;
     public float headYaw;
     public float prevHeadYaw;
-    public final double[][] segmentCircularBuffer = new double[64][3];
-    public int latestSegment = -1;
     public float yawAcceleration;
     private float velocityDecay;
     private float pitchVelocity;
@@ -118,25 +119,20 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
             this.leftWing
         };
         this.noClip = false;
+        this.setStepHeight(1.0F);
     }
 
-    public double[] getSegmentProperties(int segmentNumber, float tickDelta) {
-        if (!this.isAlive()) {
-            tickDelta = 0.0F;
-        }
+    @Override
+    public void writeCustomDataToNbt(NbtCompound nbt) {
+        nbt.put("Rotation", this.toNbtList(this.getPitch(), this.getYaw(), this.getRoll()));
+    }
 
-        tickDelta = 1.0F - tickDelta;
-        int i = this.latestSegment - segmentNumber & 63;
-        int j = this.latestSegment - segmentNumber - 1 & 63;
-        double[] ds = new double[3];
-        double d = this.segmentCircularBuffer[i][0];
-        double e = MathHelper.wrapDegrees(this.segmentCircularBuffer[j][0] - d);
-        ds[0] = d + e * (double) tickDelta;
-        d = this.segmentCircularBuffer[i][1];
-        e = this.segmentCircularBuffer[j][1] - d;
-        ds[1] = d + e * (double) tickDelta;
-        ds[2] = MathHelper.lerp(tickDelta, this.segmentCircularBuffer[i][2], this.segmentCircularBuffer[j][2]);
-        return ds;
+    @Override
+    public void readCustomDataFromNbt(NbtCompound nbt) {
+        NbtList rotation = nbt.getList("Rotation", NbtElement.FLOAT_TYPE);
+        this.setPitch(rotation.getFloat(0));
+        this.setYaw(rotation.getFloat(1));
+        this.setRoll(rotation.getFloat(2));
     }
 
     @Override
@@ -199,6 +195,9 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 
     @Override
     public Vec3d updatePassengerForDismount(LivingEntity passenger) {
+        if (!this.isOnGround()) {
+            return new Vec3d(this.getX(), this.cockpit.getBoundingBox().minY - 0.5, this.getZ());
+        }
         return new Vec3d(this.getX(), this.cockpit.getBoundingBox().maxY + 0.1, this.getZ());
     }
 
@@ -400,7 +399,7 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
         }
 
         if (!this.getWorld().isClient) {
-            this.damageLivingEntities(this.getWorld().getOtherEntities(this, this.nose.getBoundingBox().expand(1.25), EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR), 2.0F);
+            this.damageLivingEntities(this.getWorld().getOtherEntities(this, this.nose.getBoundingBox().expand(1.0), EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR), 2.0F);
             if (this.getVelocity().length() > 0.25F) {
                 for (MonoplanePart part : this.parts) {
                     this.damageLivingEntities(this.getWorld().getOtherEntities(this, part.getBoundingBox().expand(0.5), EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR), MathHelper.ceil(MathHelper.clamp(this.getVelocity().length() * 2.0, 0.0, 2.147483647E9)));
@@ -453,7 +452,7 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 
     private void updateController() {
         if (this.hasPassengers()) {
-            double planeVelocity = getVelocity().horizontalLength();
+            double planeVelocity = this.getVelocity().horizontalLength();
             float velocity = 0.0F;
 
             if (this.pressingLeft) {
@@ -472,11 +471,11 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 
             if (this.pressingBack) {
                 this.yawInput += 0.3F * this.roll / 90;
-                this.pitchInput -= 0.4F * (90 - Math.abs(this.roll)) / 90;
+                this.pitchInput -= 0.8F * (90 - Math.abs(this.roll)) / 90;
             }
 
             if (this.pressingForward) {
-                this.pitchInput += 0.4F;
+                this.pitchInput += 0.8F;
             }
 
             if (this.pressingEngineUp) {
@@ -514,8 +513,8 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
 //			}
 
             this.pitchInput = MathHelper.clamp(this.pitchInput, -2F, 2F);
-            this.yawInput = MathHelper.clamp(this.yawInput, -0.5F, 0.5F);
-            this.rollInput = MathHelper.clamp(this.rollInput, -55F, 55F);
+            this.yawInput = this.isOnGround() ? MathHelper.clamp(this.yawInput, -0.5F, 0.5F) : MathHelper.clamp(this.yawInput, -1F, 1F);
+            this.rollInput = MathHelper.clamp(this.rollInput, -5F, 5F);
 
             this.pitchVelocity = this.pitchInput;
             this.rollVelocity = this.rollInput;
@@ -561,8 +560,8 @@ public class MonoplaneEntity extends VehicleEntity implements MonoplaneMultipart
             this.velocityDecay = 0.999F;
             this.addGlidingEffects();
         }
-        float pitchVelocityDecay = 0.9F;
-        float yawVelocityDecay = 0.985F;
+        float pitchVelocityDecay = 0.7F;
+        float yawVelocityDecay = this.isOnGround() ? 0.985F : 0.7F;
         float rollVelocityDecay = 0.6F;
         Vec3d vec3d = this.getVelocity();
         this.setVelocity(vec3d.x * this.velocityDecay, vec3d.y + gravity/* + Math.min(lift, 0.040001F)*/, vec3d.z * this.velocityDecay);

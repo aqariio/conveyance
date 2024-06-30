@@ -23,6 +23,7 @@ public class ConveyanceClient implements ClientModInitializer {
     public static final EntityModelLayer MONOPLANE = new EntityModelLayer(new Identifier(Conveyance.ID, "monoplane"), "main");
     public static final EntityModelLayer BIPLANE = new EntityModelLayer(new Identifier(Conveyance.ID, "biplane"), "main");
     public static PropellerLoop propellerSoundLoop;
+    private static float prevDistance = Float.MAX_VALUE;
 
     @Override
     public void onInitializeClient(ModContainer mod) {
@@ -56,8 +57,9 @@ public class ConveyanceClient implements ClientModInitializer {
                         }
 
                         float engineSpeedMultiplier = (200.0F - closestPlane.getEngineSpeed()) / 200.0F;
-                        propellerSoundLoop.setVolume(2.0F - closestDistance / 200.0F - engineSpeedMultiplier);
-                        propellerSoundLoop.setPitch(1.0F/* - engineSpeedMultiplier / 2.0F*/);
+                        propellerSoundLoop.setVolume(2.25F - closestDistance / 200.0F - engineSpeedMultiplier);
+                        propellerSoundLoop.setPitch(1.0F + (prevDistance - closestDistance) / 10/* - engineSpeedMultiplier / 2.0F*/); // doppler effect
+                        prevDistance = closestDistance;
                     }
                     else {
                         if (client.getSoundManager().isPlaying(propellerSoundLoop)) {

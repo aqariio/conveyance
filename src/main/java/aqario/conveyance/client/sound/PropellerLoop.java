@@ -29,8 +29,8 @@ public class PropellerLoop extends MovingSoundInstance {
 
     @Override
     public void tick() {
-        if (this.player.isRemoved()) {
-            this.setDone();
-        }
+//        if (this.player.isRemoved()) {
+//            this.setDone();
+//        }
     }
 }
