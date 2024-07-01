@@ -44,7 +44,7 @@ public class ConveyanceClient implements ClientModInitializer {
                     MonoplaneEntity closestPlane = null;
                     closestDistance = Float.MAX_VALUE;
 
-                    for (MonoplaneEntity plane : client.world.getEntitiesByClass(MonoplaneEntity.class, client.player.getBoundingBox().expand(400.0), (plane) -> true)) {
+                    for (MonoplaneEntity plane : client.world.getEntitiesByClass(MonoplaneEntity.class, client.player.getBoundingBox().expand(512.0), (plane) -> plane.getEngineSpeed() > 0)) {
                         float currentDistance = plane.distanceTo(client.player);
                         if (currentDistance < closestDistance) {
                             closestPlane = plane;

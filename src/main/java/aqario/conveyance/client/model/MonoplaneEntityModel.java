@@ -28,12 +28,12 @@ public class MonoplaneEntityModel extends EntityModel<MonoplaneEntity> {
     public static TexturedModelData getTexturedModelData() {
         ModelData modelData = new ModelData();
         ModelPartData modelPartData = modelData.getRoot();
-        ModelPartData plane = modelPartData.addChild("plane", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 6.0F, 0.0F));
+        ModelPartData plane = modelPartData.addChild("plane", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
 
         ModelPartData fuselage = plane.addChild("fuselage", ModelPartBuilder.create().uv(192, 79).cuboid(-9.0F, -34.0F, -6.0F, 18.0F, 8.0F, 24.0F, new Dilation(0.0F))
             .uv(0, 0).cuboid(-10.0F, -26.0F, -57.0F, 20.0F, 22.0F, 81.0F, new Dilation(0.0F))
             .uv(121, 137).cuboid(-7.0F, -32.0F, 18.0F, 14.0F, 22.0F, 40.0F, new Dilation(0.0F))
-            .uv(0, 155).cuboid(-4.0F, -31.0F, 58.0F, 8.0F, 16.0F, 34.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, 4.0F, -5.0F));
+            .uv(0, 155).cuboid(-4.0F, -31.0F, 58.0F, 8.0F, 16.0F, 34.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, 12.0F, -1.0F));
 
         ModelPartData dashboard_r1 = fuselage.addChild("dashboard_r1", ModelPartBuilder.create().uv(62, 126).cuboid(-10.0F, -22.0F, 0.0F, 20.0F, 22.0F, 0.0F, new Dilation(0.0F)), ModelTransform.of(0.0F, -4.0F, -5.0F, 0.0873F, 0.0F, 0.0F));
 
@@ -43,7 +43,7 @@ public class MonoplaneEntityModel extends EntityModel<MonoplaneEntity> {
 
         ModelPartData headrest_r1 = seat.addChild("headrest_r1", ModelPartBuilder.create().uv(345, 0).cuboid(-4.0F, -22.0F, 0.0F, 8.0F, 6.0F, 2.0F, new Dilation(0.0F)), ModelTransform.of(0.0F, 3.0F, 4.0F, -0.0698F, 0.0F, 0.0F));
 
-        ModelPartData wings = plane.addChild("wings", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 4.0F, -5.0F));
+        ModelPartData wings = plane.addChild("wings", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 12.0F, -1.0F));
 
         ModelPartData leftWing = wings.addChild("leftWing", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
 
@@ -57,17 +57,17 @@ public class MonoplaneEntityModel extends EntityModel<MonoplaneEntity> {
 
         ModelPartData rightAileron = rightWing.addChild("rightAileron", ModelPartBuilder.create().uv(121, 61).mirrored().cuboid(-64.0F, -1.0F, 0.0F, 64.0F, 2.0F, 16.0F, new Dilation(0.0F)).mirrored(false), ModelTransform.of(-10.0F, -5.0F, 8.0F, 0.0F, 0.0F, 0.0873F));
 
-        ModelPartData tail = plane.addChild("tail", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 4.0F, -5.0F));
+        ModelPartData tail = plane.addChild("tail", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 12.0F, -1.0F));
 
         ModelPartData rudder = tail.addChild("rudder", ModelPartBuilder.create().uv(0, 0).cuboid(-1.0F, -16.0F, 0.0F, 2.0F, 32.0F, 24.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, -36.0F, 80.0F));
 
         ModelPartData elevator = tail.addChild("elevator", ModelPartBuilder.create().uv(121, 35).cuboid(-34.0F, -1.0F, 0.0F, 68.0F, 2.0F, 24.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, -29.0F, 76.0F));
 
-        ModelPartData propeller = plane.addChild("propeller", ModelPartBuilder.create().uv(0, 209).cuboid(-7.0F, -7.0F, -11.0F, 14.0F, 14.0F, 10.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, -11.0F, -61.0F));
+        ModelPartData propeller = plane.addChild("propeller", ModelPartBuilder.create().uv(0, 209).cuboid(-7.0F, -7.0F, -11.0F, 14.0F, 14.0F, 10.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, -4.0F, -57.0F));
 
         ModelPartData blade_r1 = propeller.addChild("blade_r1", ModelPartBuilder.create().uv(65, 206).cuboid(-30.0F, -30.0F, 0.0F, 60.0F, 60.0F, 0.0F, new Dilation(0.0F)), ModelTransform.of(0.0F, 0.0F, -4.0F, 0.0F, 0.0F, 0.7854F));
 
-        ModelPartData landingGear = plane.addChild("landingGear", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 4.0F, -5.0F));
+        ModelPartData landingGear = plane.addChild("landingGear", ModelPartBuilder.create(), ModelTransform.pivot(0.0F, 12.0F, -1.0F));
 
         ModelPartData leftWheel = landingGear.addChild("leftWheel", ModelPartBuilder.create().uv(30, 0).mirrored().cuboid(-2.0F, 0.0F, -1.0F, 2.0F, 16.0F, 2.0F, new Dilation(0.0F)).mirrored(false), ModelTransform.of(12.0F, -5.0F, -16.0F, 0.0F, 0.0F, -0.2182F));
 

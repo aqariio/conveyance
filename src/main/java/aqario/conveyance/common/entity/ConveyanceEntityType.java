@@ -27,7 +27,8 @@ public class ConveyanceEntityType {
         QuiltEntityTypeBuilder.create()
             .entityFactory(MonoplaneEntity::new)
             .spawnGroup(SpawnGroup.MISC)
-            .setDimensions(EntityDimensions.fixed(10.0F, 2.5F))
+            .setDimensions(EntityDimensions.fixed(0.0F, 0.0F))
+            .maxChunkTrackingRange(128)
     );
 
     public static final EntityType<BiplaneEntity> BIPLANE = register(

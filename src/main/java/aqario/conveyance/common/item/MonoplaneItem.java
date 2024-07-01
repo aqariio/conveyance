@@ -19,12 +19,11 @@ public class MonoplaneItem extends Item {
     public ActionResult useOnBlock(ItemUsageContext ctx) {
         PlayerEntity player = ctx.getPlayer();
         BlockPos pos = ctx.getBlockPos();
-        Direction dir = ctx.getPlayerFacing();
         float headYaw = player.getHeadYaw();
         if (ctx.getWorld().getBlockState(pos.offset(ctx.getSide())).isAir() && ctx.getWorld().getBlockState(pos.offset(Direction.UP, 2)).isAir() ||
             ctx.getWorld().getBlockState(pos.offset(ctx.getSide())).getBlock().equals(Blocks.WATER) && ctx.getWorld().getBlockState(pos.offset(ctx.getSide()).offset(Direction.UP)).getBlock().equals(Blocks.WATER) && ctx.getWorld().getBlockState(pos.offset(ctx.getSide()).offset(Direction.UP, 2)).getBlock().equals(Blocks.WATER)) {
             MonoplaneEntity monoplaneEntity = new MonoplaneEntity(ConveyanceEntityType.MONOPLANE, ctx.getWorld());
-            monoplaneEntity.refreshPositionAndAngles(pos.offset(ctx.getSide()),
+            monoplaneEntity.refreshPositionAndAngles(pos.offset(ctx.getSide()).offset(Direction.Axis.Y, 2),
                 (headYaw >= 0 && headYaw <= 45) || (headYaw >= 135 && headYaw <= 180) ? 90 :
                     (headYaw >= 45 && headYaw <= 90) || (headYaw >= -90 && headYaw <= -45) ? 0 :
                         (headYaw >= 90 && headYaw <= 135) || (headYaw >= -135 && headYaw <= -90) ? 180 : -90,
